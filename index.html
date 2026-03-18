@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club BOOM Request</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin: 20px 0;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-group { margin: 14px 0; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        select {
+            width: 100%;
+            max-width: 420px;
+            padding: 14px 16px;
+            font-size: 16px;
+            border-radius: 12px;
+            border: 2px solid #333;
+            background: #111;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        select option {
+            background: #111;
+            color: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+
+        input::placeholder { color: #888; }
+
+        button {
+            width: 100%;
+            max-width: 420px;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: black;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px auto;
+            display: block;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin: 16px 0;
+            padding: 12px 16px;
+            border-radius: 10px;
+            min-height: 20px;
+            font-size: 14px;
+        }
+
+        #message.error {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+        }
+
+        #message.success {
+            background: rgba(0, 255, 0, 0.1);
+            color: #51cf66;
+            border: 1px solid #51cf66;
+        }
+
+        .queue {
+            margin-top: 40px;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+
+        #requestStatus {
+            background: rgba(255, 215, 0, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .scarcity-message {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 215, 0, 0.1));
+            border: 2px solid #ff4444;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 12px auto;
+            max-width: 420px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ff6b6b;
+            animation: pulse 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 16px; }
+            h1 { font-size: 1.8rem; }
+            input, select, button {
+                max-width: 100%;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎵 BOOM SONG REQUEST</h1>
+
+    <p style="color: #ccc; margin-bottom: 20px; font-size: 16px;">What song do you want to hear?</p>
+
+    <div class="form-group">
+        <label for="songInput">Song Name:</label>
+        <input type="text" id="songInput" placeholder="Enter the song name below" autocomplete="off">
+    </div>
+
+    <div class="form-group">
+        <label for="tierSelect">Select Priority Tier</label>
+        <select id="tierSelect">
+            <option value="standard" style="color: #888;">⭐ Standard – R150</option>
+            <option value="express" selected style="color: #4dabf7;">⭐⭐ Express – R250</option>
+            <option value="vip" style="color: #ffd43b; font-weight: bold;">⭐⭐⭐ VIP – R500 🔥 MOST POPULAR</option>
+        </select>
+    </div>
+
+    <div class="scarcity-message">🔥 Only 2 VIP spots available per hour</div>
+
+    <div class="tier-info" style="background-color: #1a1a1a; padding: 12px; border-radius: 8px; margin: 10px 0; border: 1px solid #333;">
+        <div style="color: #ff6b6b; font-weight: bold; margin-bottom: 8px;">🎯 Priority Benefits</div>
+        <div style="font-size: 14px; line-height: 1.4;">
+            🔥 VIP requests play before all other songs<br>
+            ⚡ Express jumps ahead of the normal queue<br>
+            🎵 Standard joins the regular queue
+        </div>
+        <div style="color: #ffd43b; font-size: 13px; margin-top: 8px; font-weight: bold;">
+            ⚡ VIP requests usually play within 2–3 songs
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="paymentMethod">Choose Payment Method</label>
+        <select id="paymentMethod">
+            <option value="yoco">💳 Card Payment (Card payments coming soon)</option>
+            <option value="payfast">₿ Pay with Crypto / Wallet</option>
+            <option value="usdt">💰 USDT (TRC20)</option>
+            <option value="btc">₿ Bitcoin</option>
+        </select>
+    </div>
+
+    <div style="margin: 20px 0;">
+        <button id="submitBtn" onclick="requestSong()">🎧 Pay & Request Song</button>
+        <button onclick="window.location.href='qr.html?url=' + encodeURIComponent(window.location.origin)">📲 Share App QR</button>
+    </div>
+
+    <p id="message"></p>
+
+    <div class="queue">
+        <h2>Your Request Status</h2>
+        <div id="requestStatus">Waiting for payment confirmation…</div>
+        
+        <div id="queueStatus" style="margin-top: 20px; background-color: #1a1a1a; padding: 12px; border-radius: 8px; border: 1px solid #333;">
+            <div style="color: #ffd43b; font-weight: bold; margin-bottom: 8px;">📊 Queue Status</div>
+            <div id="queueStats" style="font-size: 14px; line-height: 1.6;">
+                Loading queue status...
+            </div>
+        </div>
+    </div>
+
+<script src="config.js"></script>
+<script>
+async function requestSong() {
+    const songName = document.getElementById("songInput").value.trim();
+    const tier = document.getElementById("tierSelect").value;
+    const paymentMethod = document.getElementById("paymentMethod").value;
+    const submitBtn = document.getElementById("submitBtn");
+
+    const messageEl = document.getElementById("message");
+    messageEl.textContent = "";
+    messageEl.className = "";
+
+    if (!songName || songName.length < 2) {
+        messageEl.textContent = "❌ Please enter a valid song name (at least 2 characters).";
+        messageEl.className = "error";
+        return;
+    }
+
+    if (songName.length > 100) {
+        messageEl.textContent = "❌ Song name is too long (max 100 characters).";
+        messageEl.className = "error";
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "⏳ Processing...";
+
+    const endpoint = paymentMethod === "payfast" ? "/create-payfast-payment" :
+                     paymentMethod === "usdt" ? "/create-usdt-payment" :
+                     paymentMethod === "btc" ? "/create-btc-payment" :
+                     "/create-payment";
+
+    try {
+        const response = await fetch(API_URL + endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ songName, tier })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.paymentUrl) {
+            throw new Error("Payment service unavailable");
+        }
+
+        messageEl.textContent = "✅ Redirecting to payment...";
+        messageEl.className = "success";
+
+        setTimeout(() => {
+            window.location.href = data.paymentUrl;
+        }, 500);
+
+    } catch (error) {
+        console.error("Payment request error:", error);
+        messageEl.textContent = "❌ " + (error.message || "Unable to process payment");
+        messageEl.className = "error";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🎧 Pay & Request Song";
+    }
+}
+
+async function loadRequestStatus() {
+    const statusEl = document.getElementById("requestStatus");
+    const paymentId = localStorage.getItem("lastPaymentId");
+    const lastSong = localStorage.getItem("lastSong");
+    const lastTier = localStorage.getItem("lastTier");
+
+    if (!paymentId) {
+        statusEl.textContent = "No active request. Submit a song above to start.";
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL + "/queue");
+        const queue = await response.json();
+
+        const item = queue.find(i => i.paymentId === paymentId);
+
+        if (item) {
+            statusEl.innerHTML = `✅ <strong>${item.song}</strong> (${item.tier.toUpperCase()}) is in queue. <br> Position: ${queue.findIndex(i => i.paymentId === paymentId) + 1}`;
+        } else {
+            statusEl.innerHTML = `✅ Your request <strong>${lastSong || ''}</strong> has been processed. <br>Contact DJ if it hasn't played yet.`;
+        }
+    } catch (error) {
+        console.error("Error loading request status:", error);
+        statusEl.textContent = "Unable to load request status.";
+    }
+}
+
+async function loadQueueStatus() {
+    const statsEl = document.getElementById("queueStats");
+
+    try {
+        const response = await fetch(API_URL + "/queue");
+        const queue = await response.json();
+
+        const vipCount = queue.filter(item => item.tier === 'vip').length;
+        const expressCount = queue.filter(item => item.tier === 'express').length;
+        const standardCount = queue.filter(item => item.tier === 'standard').length;
+
+        statsEl.innerHTML = `
+            <span style="color: #ffd43b;">VIP: ${vipCount} waiting</span><br>
+            <span style="color: #4dabf7;">Express: ${expressCount} waiting</span><br>
+            <span style="color: #888;">Standard: ${standardCount} waiting</span>
+        `;
+    } catch (error) {
+        console.error("Error loading queue status:", error);
+        statsEl.textContent = "Unable to load queue status.";
+    }
+}
+
+// Load status on page load and refresh every 10 seconds
+setInterval(() => {
+    loadRequestStatus();
+    loadQueueStatus();
+}, 10000);
+
+loadRequestStatus();
+loadQueueStatus();
+
+setInterval(loadRequestStatus, 5000);
+loadRequestStatus();
+</script>

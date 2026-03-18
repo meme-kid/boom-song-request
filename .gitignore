@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+club.db
+club.db-shm
+club.db-wal
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo

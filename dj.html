@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Dashboard</title>
+    <style>
+        body {
+            background-color: #111;
+            color: #0f0;
+            font-family: monospace;
+            text-align: center;
+            padding: 20px;
+        }
+
+        button {
+            padding: 12px 18px;
+            font-size: 18px;
+            margin-top: 14px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+            max-width: 280px;
+            width: 100%;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 520px;
+        }
+
+        li {
+            margin: 10px 0;
+            font-size: 18px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.08);
+            border: 1px solid rgba(0, 255, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+
+            li {
+                font-size: 16px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎧 DJ Dashboard</h1>
+
+    <div class="queue">
+        <h2>Live Queue</h2>
+        <ul id="songList"></ul>
+    </div>
+
+    <div class="pending-crypto" style="margin-top: 40px; background-color: #222; padding: 20px; border-radius: 10px;">
+        <h2>🔍 Pending Crypto Payments</h2>
+        <p>Payments waiting for verification:</p>
+        <ul id="pendingList"></ul>
+    </div>
+
+    <button onclick="clearQueue()">Clear Queue</button>
+
+    <div class="verification" style="margin-top: 40px; background-color: #222; padding: 20px; border-radius: 10px;">
+        <h2>🔍 Manual Payment Verification</h2>
+        <p>For direct crypto payments (USDT/BTC) - verify transaction and add to queue</p>
+        
+        <div style="text-align: left; max-width: 400px; margin: 0 auto;">
+            <label>Payment ID:</label><br>
+            <input type="text" id="verifyPaymentId" placeholder="e.g., USDT-123456789" style="width: 100%; padding: 8px; margin: 5px 0;"><br>
+            
+            <label>Song Name:</label><br>
+            <input type="text" id="verifySongName" placeholder="Song requested" style="width: 100%; padding: 8px; margin: 5px 0;"><br>
+            
+            <label>Tier:</label><br>
+            <select id="verifyTier" style="width: 100%; padding: 8px; margin: 5px 0;">
+                <option value="standard">Standard - R150</option>
+                <option value="express">Express - R250</option>
+                <option value="vip">VIP - R500</option>
+            </select><br>
+            
+            <label>Payment Method:</label><br>
+            <select id="verifyMethod" style="width: 100%; padding: 8px; margin: 5px 0;">
+                <option value="usdt">USDT TRC20</option>
+                <option value="btc">Bitcoin</option>
+            </select><br>
+            
+            <button onclick="verifyPayment()" style="width: 100%; padding: 10px; background-color: #0f0; color: black; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                ✅ Verify & Add to Queue
+            </button>
+        </div>
+        
+        <div id="verificationStatus" style="margin-top: 15px; padding: 10px; background-color: #333; border-radius: 5px;"></div>
+    </div>
+
+<script src="config.js"></script>
+<script>
+async function loadQueue() {
+    try {
+        let response = await fetch(API_URL + "/queue");
+        let queue = await response.json();
+
+        let songList = document.getElementById("songList");
+        songList.innerHTML = "";
+
+        queue.forEach((item, index) => {
+            const tierPrices = { standard: "R150", express: "R250", vip: "R500" };
+            const methodIcon = item.paymentMethod === "payfast" ? "₿" : 
+                              item.paymentMethod === "usdt" ? "💰" :
+                              item.paymentMethod === "btc" ? "₿" :
+                              item.paymentMethod === "yoco" ? "💳" : "❓";
+
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>${index + 1}. ${item.song}</strong> <em>[${item.tier.toUpperCase()} - ${tierPrices[item.tier]}]</em> ${methodIcon}
+                <br>
+                <small>ID: ${item.id} | Payment: ${item.paymentId || 'N/A'}</small>
+                ${item.txid ? `<br><small>TXID: <span style="font-family: monospace; color: #0f0;">${item.txid}</span></small>` : ''}
+                <br>
+                <button onclick="markPlayed(${item.id})" style="margin-top:6px; padding:4px 10px;">Mark Played</button>
+            `;
+
+            songList.appendChild(li);
+        });
+    } catch (error) {
+        console.log("Error loading queue:", error);
+    }
+}
+
+async function loadPendingCrypto() {
+    try {
+        let response = await fetch(API_URL + "/pending-crypto");
+        let pending = await response.json();
+
+        let pendingList = document.getElementById("pendingList");
+        pendingList.innerHTML = "";
+
+        if (pending.length === 0) {
+            pendingList.innerHTML = "<li style='color: #666;'>No pending crypto payments</li>";
+            return;
+        }
+
+        pending.forEach((item) => {
+            const methodIcon = item.method === "usdt" ? "💰" : item.method === "btc" ? "₿" : "❓";
+
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>${item.song || 'Unknown Song'}</strong> ${methodIcon}
+                <br>
+                <small>Payment ID: ${item.paymentId}</small>
+                <br>
+                <small>TXID: <span style="font-family: monospace; color: #0f0;">${item.txid}</span></small>
+                <br>
+                <button onclick="verifyPendingCrypto('${item.paymentId}')" style="margin-top:6px; padding:4px 10px; background-color: #0f0; color: black;">Verify & Add</button>
+            `;
+
+            pendingList.appendChild(li);
+        });
+    } catch (error) {
+        console.log("Error loading pending crypto:", error);
+    }
+}
+
+// Refresh queue and pending crypto every 3 seconds
+setInterval(() => {
+    loadQueue();
+    loadPendingCrypto();
+}, 3000);
+loadQueue();
+loadPendingCrypto();
+
+async function clearQueue() {
+    const password = prompt("Enter DJ password to clear queue:");
+    if (!password) return;
+
+    try {
+        const response = await fetch(API_URL + "/clear-queue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password })
+        });
+        
+        if (response.ok) {
+            alert("Queue cleared!");
+            loadQueue();
+        } else {
+            alert("Invalid password!");
+        }
+    } catch (error) {
+        console.log("Error clearing queue:", error);
+    }
+}
+
+async function markPlayed(id) {
+    const password = prompt("Enter DJ password to mark as played:");
+    if (!password) return;
+
+    try {
+        const response = await fetch(API_URL + "/mark-played", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, password })
+        });
+
+        if (response.ok) {
+            alert("Marked as played");
+            loadQueue();
+        } else {
+            const data = await response.json();
+            alert("Failed: " + (data.message || "unknown"));
+        }
+    } catch (error) {
+        console.log("Error marking played:", error);
+    }
+}
+
+async function verifyPendingCrypto(paymentId) {
+    const password = prompt("Enter DJ password to verify payment:");
+    if (!password) return;
+
+    // Get the pending crypto details
+    try {
+        const response = await fetch(API_URL + "/pending-crypto");
+        const pending = await response.json();
+        const item = pending.find(p => p.paymentId === paymentId);
+        
+        if (!item) {
+            alert("Payment not found");
+            return;
+        }
+
+        const songName = item.song;
+        const tier = item.tier;
+        const method = item.method;
+
+        if (!songName || !tier) {
+            alert("Song name and tier not found in submission");
+            return;
+        }
+
+        // Verify and add to queue
+        const verifyResponse = await fetch(API_URL + "/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password, paymentId, songName, tier, method })
+        });
+
+        if (verifyResponse.ok) {
+            // Remove from pending
+            await fetch(API_URL + "/remove-pending-crypto", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentId, password })
+            });
+            
+            alert("Payment verified and added to queue!");
+            loadQueue();
+            loadPendingCrypto();
+        } else {
+            const data = await verifyResponse.json();
+            alert("Failed: " + (data.message || "unknown"));
+        }
+    } catch (error) {
+        console.log("Error verifying pending crypto:", error);
+        alert("Error verifying payment");
+    }
+}
+
+async function verifyPayment() {
+    const paymentId = document.getElementById("verifyPaymentId").value.trim();
+    const songName = document.getElementById("verifySongName").value.trim();
+    const tier = document.getElementById("verifyTier").value;
+    const method = document.getElementById("verifyMethod").value;
+    const password = prompt("Enter DJ password to verify payment:");
+    
+    if (!password) return;
+    if (!paymentId || !songName) {
+        alert("Please fill in all fields!");
+        return;
+    }
+
+    const statusDiv = document.getElementById("verificationStatus");
+    statusDiv.textContent = "Verifying payment...";
+    statusDiv.style.color = "#fff";
+
+    try {
+        const response = await fetch(API_URL + "/verify-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password, paymentId, songName, tier, method })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            statusDiv.textContent = "✅ Payment verified! Song added to queue.";
+            statusDiv.style.color = "#0f0";
+            // Clear form
+            document.getElementById("verifyPaymentId").value = "";
+            document.getElementById("verifySongName").value = "";
+            // Reload queue
+            loadQueue();
+        } else {
+            statusDiv.textContent = "❌ " + (data.message || "Verification failed");
+            statusDiv.style.color = "#f00";
+        }
+    } catch (error) {
+        console.log("Error verifying payment:", error);
+        statusDiv.textContent = "❌ Error verifying payment";
+        statusDiv.style.color = "#f00";
+    }
+}
+</script>
+
+</body>
+</html>

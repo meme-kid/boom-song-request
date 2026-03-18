@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Success</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 50px 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .success-message {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-size: 18px;
+            color: #51cf66;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-message">🎉 Payment Successful!</div>
+    <div id="status" class="status">Processing your request...</div>
+
+<script src="config.js"></script>
+<script>
+async function handleSuccess() {
+    const params = new URLSearchParams(window.location.search);
+    const song = params.get("song");
+    const tier = params.get("tier");
+    const method = params.get("method") || "yoco";
+    const paymentId = params.get("pid");
+
+    if (!song || !tier) {
+        window.location.href = "index.html";
+        return;
+    }
+
+    try {
+        const response = await fetch(API_URL + "/add-to-queue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                songName: song, 
+                tier,
+                method,
+                paymentId
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log("Song added:", data.message);
+        } else {
+            console.error("Server error:", data.message);
+        }
+
+    } catch (error) {
+        console.error("Error adding song to queue:", error);
+    }
+
+    // Store last request info so user can track status
+    localStorage.setItem("lastPaymentId", paymentId);
+    localStorage.setItem("lastSong", song);
+    localStorage.setItem("lastTier", tier);
+    localStorage.setItem("lastMethod", method);
+
+    // Display status message
+    const params2 = new URLSearchParams(window.location.search);
+    const song2 = params2.get("song");
+
+    let message;
+
+    if (song2) {
+        message = "✅ Your request \"" + song2 + "\" has been processed.";
+    } else {
+        message = "✅ Your song request has been received.";
+    }
+
+    document.getElementById("status").innerText = message;
+
+    // Redirect back to the request page
+    setTimeout(() => {
+        window.location.href = "index.html";
+    }, 500);
+}
+
+handleSuccess();
+</script>

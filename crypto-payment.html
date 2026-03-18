@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Payment - Club Song Request</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 18px;
+        }
+
+        .payment-container {
+            max-width: 560px;
+            margin: 0 auto;
+            background-color: #111;
+            padding: 22px;
+            border-radius: 14px;
+            box-shadow: 0 0 18px rgba(0, 255, 0, 0.3);
+        }
+
+        .qr-code {
+            margin: 18px auto;
+            padding: 16px;
+            background-color: white;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .wallet-address {
+            background-color: #222;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 18px 0;
+            font-family: monospace;
+            word-break: break-all;
+            border: 1px solid #333;
+        }
+
+        .copy-btn,
+        .back-btn {
+            background-color: gold;
+            color: black;
+            border: none;
+            padding: 14px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px 8px;
+            font-weight: bold;
+            width: calc(100% - 32px);
+            max-width: 320px;
+        }
+
+        .copy-btn:hover,
+        .back-btn:hover {
+            background-color: orange;
+        }
+
+        .instructions {
+            background-color: #222;
+            padding: 16px;
+            border-radius: 10px;
+            margin: 18px 0;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 10px 0;
+        }
+
+        .amount-display {
+            font-size: 22px;
+            font-weight: bold;
+            color: gold;
+            margin: 18px 0;
+        }
+
+        .status {
+            margin-top: 22px;
+            padding: 14px;
+            background-color: #333;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 480px) {
+            .payment-container {
+                padding: 16px;
+            }
+
+            .amount-display {
+                font-size: 20px;
+            }
+
+            .instructions {
+                padding: 14px;
+            }
+
+            .copy-btn,
+            .back-btn {
+                width: 100%;
+                max-width: none;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .payment-container {
+                box-shadow: none;
+                background: white;
+                padding: 0;
+            }
+            .instructions,
+            .status,
+            .back-btn,
+            .copy-btn {
+                display: none !important;
+            }
+            .qr-code {
+                border: none;
+                margin: 0 auto;
+            }
+            .wallet-address {
+                border: none;
+                background: none;
+                color: black;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="payment-container">
+        <h1>💰 Crypto Payment</h1>
+        
+        <div id="payment-details">
+            <h2 id="crypto-type">Loading...</h2>
+            <div class="amount-display" id="amount">Loading...</div>
+            
+            <div class="qr-code" id="qr-container">
+                <p>Generating QR Code...</p>
+            </div>
+            
+            <div class="wallet-address" id="wallet-address">
+                Loading wallet address...
+            </div>
+            
+            <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Payment Instructions</h3>
+            <ol>
+                <li>Send exactly <strong id="exact-amount">0.00</strong> <span id="crypto-name">USDT</span> to the address above</li>
+                <li>Use TRON (TRC20) network for USDT or Bitcoin network for BTC</li>
+                <li>Include <strong id="memo">SONG-123456789</strong> as memo/reference if supported</li>
+                <li>Payment will be verified manually by the DJ</li>
+                <li>Your song will be added to the queue once payment is confirmed</li>
+            </ol>
+            
+            <p><strong>⚠️ Important:</strong> Send the exact amount. Overpayments cannot be refunded.</p>
+        </div>
+
+        <div class="status">
+            <h3>⏳ Payment Status</h3>
+            <p>Status: <strong>Pending Payment</strong></p>
+            <p>After sending payment, enter your transaction ID below for DJ verification.</p>
+        </div>
+
+        <div class="txid-form" style="margin: 20px 0; padding: 16px; background-color: #222; border-radius: 8px; border: 1px solid #333;">
+            <h3>📝 Submit Transaction ID</h3>
+            <p>Enter the TXID from your wallet after sending the payment:</p>
+            <input type="text" id="txid-input" placeholder="Enter TXID (e.g., abc123...)" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #555; border-radius: 4px; background-color: #333; color: white; font-family: monospace;" />
+            <button class="copy-btn" onclick="submitTxid()" style="width: 100%;">✅ Submit TXID</button>
+            <div id="txid-message" style="margin-top: 10px; color: #ccc;"></div>
+        </div>
+
+        <div style="margin-top: 20px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
+            <button class="copy-btn" onclick="copyAddress()">📋 Copy Address</button>
+            <button class="copy-btn" onclick="printPage()">🖨️ Print QR</button>
+            <button class="back-btn" onclick="goBack()">← Back to Song Request</button>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const song = params.get("song");
+        const tier = params.get("tier");
+        const method = params.get("method");
+        const paymentId = params.get("pid");
+        const amount = params.get("amount");
+        const autoPrint = params.get("print") === "1";
+
+        let walletAddress = "";
+        let cryptoName = "";
+        let qrCode = null;
+
+        async function loadPaymentDetails() {
+            try {
+                // Determine crypto type
+                if (method === "usdt") {
+                    cryptoName = "USDT (TRC20)";
+                } else if (method === "btc") {
+                    cryptoName = "Bitcoin (BTC)";
+                }
+
+                document.getElementById("crypto-type").textContent = `Pay with ${cryptoName}`;
+
+                // Fetch wallet address for the chosen method
+                const response = await fetch(API_URL + "/wallet-address?method=" + method);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Unable to get wallet address");
+                }
+
+                walletAddress = data.walletAddress;
+
+                // Update UI
+                document.getElementById("amount").textContent = `${amount} ${cryptoName}`;
+                document.getElementById("wallet-address").textContent = walletAddress;
+                document.getElementById("exact-amount").textContent = amount;
+                document.getElementById("crypto-name").textContent = cryptoName;
+                document.getElementById("memo").textContent = paymentId;
+
+                // Generate QR Code
+                generateQRCode();
+
+                // Auto-print if requested
+                if (autoPrint) {
+                    setTimeout(() => window.print(), 500);
+                }
+
+            } catch (error) {
+                console.error("Error loading payment details:", error);
+                document.getElementById("payment-details").innerHTML = "<p>Error loading payment details. Please try again.</p>";
+            }
+        }
+
+        function generateQRCode() {
+            const qrContainer = document.getElementById("qr-container");
+            qrContainer.innerHTML = ""; // Clear loading text
+            
+            // Create QR code for wallet address
+            qrCode = new QRCode(qrContainer, {
+                text: walletAddress,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function copyAddress() {
+            navigator.clipboard.writeText(walletAddress).then(() => {
+                const btn = document.querySelector(".copy-btn");
+                const originalText = btn.textContent;
+                btn.textContent = "✅ Copied!";
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error("Failed to copy:", err);
+                alert("Failed to copy address. Please copy manually.");
+            });
+        }
+
+        function goBack() {
+            window.location.href = "index.html";
+        }
+
+        function printPage() {
+            window.print();
+        }
+
+        async function submitTxid() {
+            const txid = document.getElementById("txid-input").value.trim();
+            const messageEl = document.getElementById("txid-message");
+
+            if (!txid) {
+                messageEl.textContent = "❌ Please enter a TXID";
+                messageEl.style.color = "red";
+                return;
+            }
+
+            try {
+                const response = await fetch(API_URL + "/submit-txid", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentId, txid, song, tier, method })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Failed to submit TXID");
+                }
+
+                messageEl.textContent = "✅ TXID submitted successfully! The DJ will verify your payment.";
+                messageEl.style.color = "green";
+                document.getElementById("txid-input").disabled = true;
+                document.querySelector("button[onclick='submitTxid()']").disabled = true;
+
+            } catch (error) {
+                console.error("TXID submission error:", error);
+                messageEl.textContent = "❌ " + (error.message || "Failed to submit TXID");
+                messageEl.style.color = "red";
+            }
+        }
+
+        // Store last request info so audience can track status later
+        localStorage.setItem("lastPaymentId", paymentId);
+        localStorage.setItem("lastSong", song);
+        localStorage.setItem("lastTier", tier);
+        localStorage.setItem("lastMethod", method);
+
+        // Load payment details when page loads
+        loadPaymentDetails();
+    </script>
+</body>
+</html>

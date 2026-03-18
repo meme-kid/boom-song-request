@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code - Club Song Request</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 26px;
+        }
+
+        button {
+            width: 100%;
+            max-width: 360px;
+            padding: 14px 18px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: none;
+            background-color: gold;
+            cursor: pointer;
+            margin: 12px auto;
+            display: block;
+        }
+
+        button:hover {
+            background-color: orange;
+        }
+
+        .link {
+            margin-top: 18px;
+            font-family: monospace;
+            word-break: break-all;
+            padding: 12px;
+            background: #111;
+            border-radius: 10px;
+            border: 1px solid #333;
+        }
+
+        .container p {
+            font-size: 14px;
+            color: #bbb;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 18px;
+            }
+
+            .container {
+                padding: 18px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #111;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        .qr-code {
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .link {
+            margin-top: 20px;
+            font-family: monospace;
+            word-break: break-all;
+            padding: 10px;
+            background: #222;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        button {
+            margin-top: 24px;
+            padding: 12px 20px;
+            background-color: gold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: orange;
+        }
+
+        @media print {
+            button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Scan to Open the App</h1>
+
+        <div class="qr-code" id="qrContainer">
+            <p>Generating QR code...</p>
+        </div>
+
+        <div class="link" id="linkText"></div>
+
+        <div style="margin-top: 20px; text-align: left; max-width: 540px; margin-left: auto; margin-right: auto;">
+            <p style="color: #aaa; font-size: 14px;">
+                If your phone says the site can't be reached, your phone likely isn't on the same network as this computer.
+                Try entering your computer's local IP address below (e.g. <code>192.168.0.123:4000</code>).
+            </p>
+            <input id="customUrl" type="text" placeholder="http://192.168.x.x:4000" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #111; color: white;" />
+            <button style="width: 100%;" onclick="generateCustomQr()">Generate QR for my network</button>
+        </div>
+
+        <button onclick="window.print()">🖨️ Print QR</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const explicitUrl = params.get('url');
+        const qrContainer = document.getElementById('qrContainer');
+        const linkText = document.getElementById('linkText');
+
+        const createQr = (url) => {
+            linkText.textContent = url;
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: url,
+                width: 220,
+                height: 220,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        };
+
+        const showMessage = (msg) => {
+            linkText.textContent = msg;
+        };
+
+        const useUrl = explicitUrl || window.location.origin;
+
+        // Display the default QR (may be localhost)
+        createQr(useUrl);
+
+        function generateCustomQr() {
+            const input = document.getElementById('customUrl').value.trim();
+            if (!input) {
+                alert('Please enter a URL.');
+                return;
+            }
+
+            try {
+                const testUrl = new URL(input);
+                createQr(testUrl.toString());
+            } catch (e) {
+                alert('Invalid URL. Use format: http://192.168.x.x:4000');
+            }
+        }
+    </script>
+</body>
+</html>
