@@ -3,327 +3,521 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DJ dashboard for managing the BOOM live queue and verifying crypto song requests.">
-    <meta name="theme-color" content="#111111">
-    <title>DJ Dashboard</title>
+    <title>Boom Song Request - DJ Control</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #111;
-            color: #0f0;
-            font-family: monospace;
-            text-align: center;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(255, 196, 0, 0.10), transparent 25%),
+                linear-gradient(180deg, #080808 0%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand h1 {
+            margin: 0;
+            color: #ffd54a;
+            font-size: 34px;
+        }
+
+        .brand p {
+            margin: 6px 0 0 0;
+            color: #cfcfcf;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 12px 16px;
+            color: #fff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
             padding: 20px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+        }
+
+        .panel h2 {
+            margin: 0 0 16px 0;
+            color: #ffd54a;
+            font-size: 24px;
+        }
+
+        .password-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            flex: 1;
+            min-width: 220px;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-size: 15px;
+            outline: none;
         }
 
         button {
-            padding: 12px 18px;
-            font-size: 18px;
-            margin-top: 14px;
-            cursor: pointer;
-            border-radius: 10px;
             border: none;
-            max-width: 280px;
-            width: 100%;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 auto;
-            max-width: 520px;
+        .primary-btn {
+            background: linear-gradient(45deg, #ffd54a, #ff9f1a);
+            color: black;
         }
 
-        li {
-            margin: 10px 0;
-            font-size: 18px;
-            padding: 10px;
-            background: rgba(0, 255, 0, 0.08);
-            border: 1px solid rgba(0, 255, 0, 0.2);
-            border-radius: 8px;
+        .secondary-btn {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.12);
         }
 
-        @media (max-width: 480px) {
-            body {
-                padding: 12px;
-            }
+        .danger-btn {
+            background: linear-gradient(45deg, #ff4d4d, #c40000);
+            color: white;
+        }
 
-            li {
-                font-size: 16px;
-            }
+        .success-btn {
+            background: linear-gradient(45deg, #27d17f, #0e9f5b);
+            color: white;
+        }
 
-            button {
-                font-size: 16px;
+        .queue-item,
+        .pending-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .queue-head,
+        .pending-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .song-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .tier {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .vip {
+            background: linear-gradient(45deg, #ffd54a, #ff9f1a);
+            color: black;
+        }
+
+        .express {
+            background: linear-gradient(45deg, #4dc3ff, #277bff);
+            color: white;
+        }
+
+        .standard {
+            background: rgba(255,255,255,0.14);
+            color: white;
+        }
+
+        .meta {
+            color: #d0d0d0;
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .small {
+            font-size: 13px;
+            color: #bbbbbb;
+        }
+
+        .status-box {
+            margin-top: 16px;
+            min-height: 46px;
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.04);
+            color: #ededed;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 28px;
+            color: #ffd54a;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            margin-top: 6px;
+            color: #d2d2d2;
+            font-size: 13px;
+        }
+
+        .empty {
+            color: #bdbdbd;
+            text-align: center;
+            padding: 28px 10px;
+        }
+
+        @media (max-width: 1000px) {
+            .grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
 </head>
 <body>
-
-    <h1>🎧 DJ Dashboard</h1>
-
-    <div class="queue">
-        <h2>Live Queue</h2>
-        <ul id="songList"></ul>
-    </div>
-
-    <div class="pending-crypto" style="margin-top: 40px; background-color: #222; padding: 20px; border-radius: 10px;">
-        <h2>🔍 Pending Crypto Payments</h2>
-        <p>Payments waiting for verification:</p>
-        <ul id="pendingList"></ul>
-    </div>
-
-    <button onclick="clearQueue()">Clear Queue</button>
-
-    <div class="verification" style="margin-top: 40px; background-color: #222; padding: 20px; border-radius: 10px;">
-        <h2>🔍 Manual Payment Verification</h2>
-        <p>For direct crypto payments (USDT/BTC) - verify transaction and add to queue</p>
-        
-        <div style="text-align: left; max-width: 400px; margin: 0 auto;">
-            <label>Payment ID:</label><br>
-            <input type="text" id="verifyPaymentId" placeholder="e.g., USDT-123456789" style="width: 100%; padding: 8px; margin: 5px 0;" maxlength="80"><br>
-            
-            <label>Song Name:</label><br>
-            <input type="text" id="verifySongName" placeholder="Song requested" style="width: 100%; padding: 8px; margin: 5px 0;" maxlength="100"><br>
-            
-            <label>Tier:</label><br>
-            <select id="verifyTier" style="width: 100%; padding: 8px; margin: 5px 0;">
-                <option value="standard">Standard - R150</option>
-                <option value="express">Express - R250</option>
-                <option value="vip">VIP - R500</option>
-            </select><br>
-            
-            <label>Payment Method:</label><br>
-            <select id="verifyMethod" style="width: 100%; padding: 8px; margin: 5px 0;">
-                <option value="usdt">USDT TRC20</option>
-                <option value="btc">Bitcoin</option>
-            </select><br>
-            
-            <button onclick="verifyPayment()" style="width: 100%; padding: 10px; background-color: #0f0; color: black; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px;">
-                ✅ Verify & Add to Queue
-            </button>
+    <div class="wrapper">
+        <div class="topbar">
+            <div class="brand">
+                <h1>BOOM SONG REQUEST 💥</h1>
+                <p>DJ Control Dashboard</p>
+            </div>
+            <div class="badge" id="liveClock">LIVE</div>
         </div>
-        
-        <div id="verificationStatus" style="margin-top: 15px; padding: 10px; background-color: #333; border-radius: 5px;"></div>
+
+        <div class="password-row">
+            <input type="password" id="djPassword" placeholder="Enter DJ password">
+            <button class="primary-btn" onclick="savePassword()">Save Password</button>
+            <button class="danger-btn" onclick="clearQueue()">Clear Queue</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" id="vipCount">0</div>
+                <div class="stat-label">VIP Waiting</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="expressCount">0</div>
+                <div class="stat-label">Express Waiting</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="standardCount">0</div>
+                <div class="stat-label">Standard Waiting</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>🎧 Live Queue</h2>
+                <div id="queueList"></div>
+            </div>
+
+            <div class="panel">
+                <h2>💰 Pending Crypto Payments</h2>
+                <div id="pendingList"></div>
+                <div class="status-box" id="statusBox">DJ dashboard ready.</div>
+            </div>
+        </div>
     </div>
 
-<script src="config.js"></script>
-<script>
-async function loadQueue() {
-    try {
-        let response = await fetch(API_URL + "/queue");
-        let queue = await response.json();
+    <script>
+        const APP_URL = "https://www.boomsongrequest.com";
+        let djPassword = localStorage.getItem("djPassword") || "";
 
-        let songList = document.getElementById("songList");
-        songList.innerHTML = "";
+        document.getElementById("djPassword").value = djPassword;
 
-        queue.forEach((item, index) => {
-            const tierPrices = { standard: "R150", express: "R250", vip: "R500" };
-            const methodIcon = item.paymentMethod === "payfast" ? "₿" : 
-                              item.paymentMethod === "usdt" ? "💰" :
-                              item.paymentMethod === "btc" ? "₿" :
-                              item.paymentMethod === "yoco" ? "💳" : "❓";
-
-            const li = document.createElement("li");
-            li.innerHTML = `
-                <strong>${index + 1}. ${item.song}</strong> <em>[${item.tier.toUpperCase()} - ${tierPrices[item.tier]}]</em> ${methodIcon}
-                <br>
-                <small>ID: ${item.id} | Payment: ${item.paymentId || 'N/A'}</small>
-                ${item.txid ? `<br><small>TXID: <span style="font-family: monospace; color: #0f0;">${item.txid}</span></small>` : ''}
-                <br>
-                <button onclick="markPlayed(${item.id})" style="margin-top:6px; padding:4px 10px;">Mark Played</button>
-            `;
-
-            songList.appendChild(li);
-        });
-    } catch (error) {
-        console.log("Error loading queue:", error);
-    }
-}
-
-async function loadPendingCrypto() {
-    try {
-        let response = await fetch(API_URL + "/pending-crypto");
-        let pending = await response.json();
-
-        let pendingList = document.getElementById("pendingList");
-        pendingList.innerHTML = "";
-
-        if (pending.length === 0) {
-            pendingList.innerHTML = "<li style='color: #666;'>No pending crypto payments</li>";
-            return;
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("liveClock").innerText =
+                "LIVE • " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         }
 
-        pending.forEach((item) => {
-            const methodIcon = item.method === "usdt" ? "💰" : item.method === "btc" ? "₿" : "❓";
-
-            const li = document.createElement("li");
-            li.innerHTML = `
-                <strong>${item.song || 'Unknown Song'}</strong> ${methodIcon}
-                <br>
-                <small>Payment ID: ${item.paymentId}</small>
-                <br>
-                <small>TXID: <span style="font-family: monospace; color: #0f0;">${item.txid}</span></small>
-                <br>
-                <button onclick="verifyPendingCrypto('${item.paymentId}')" style="margin-top:6px; padding:4px 10px; background-color: #0f0; color: black;">Verify & Add</button>
-            `;
-
-            pendingList.appendChild(li);
-        });
-    } catch (error) {
-        console.log("Error loading pending crypto:", error);
-    }
-}
-
-// Refresh queue and pending crypto every 3 seconds
-setInterval(() => {
-    loadQueue();
-    loadPendingCrypto();
-}, 3000);
-loadQueue();
-loadPendingCrypto();
-
-async function clearQueue() {
-    const password = prompt("Enter DJ password to clear queue:");
-    if (!password) return;
-
-    try {
-        const response = await fetch(API_URL + "/clear-queue", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password })
-        });
-        
-        if (response.ok) {
-            alert("Queue cleared!");
-            loadQueue();
-        } else {
-            alert("Invalid password!");
-        }
-    } catch (error) {
-        console.log("Error clearing queue:", error);
-    }
-}
-
-async function markPlayed(id) {
-    const password = prompt("Enter DJ password to mark as played:");
-    if (!password) return;
-
-    try {
-        const response = await fetch(API_URL + "/mark-played", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, password })
-        });
-
-        if (response.ok) {
-            alert("Marked as played");
-            loadQueue();
-        } else {
-            const data = await response.json();
-            alert("Failed: " + (data.message || "unknown"));
-        }
-    } catch (error) {
-        console.log("Error marking played:", error);
-    }
-}
-
-async function verifyPendingCrypto(paymentId) {
-    const password = prompt("Enter DJ password to verify payment:");
-    if (!password) return;
-
-    // Get the pending crypto details
-    try {
-        const response = await fetch(API_URL + "/pending-crypto");
-        const pending = await response.json();
-        const item = pending.find(p => p.paymentId === paymentId);
-        
-        if (!item) {
-            alert("Payment not found");
-            return;
+        function savePassword() {
+            djPassword = document.getElementById("djPassword").value.trim();
+            localStorage.setItem("djPassword", djPassword);
+            setStatus("DJ password saved.");
         }
 
-        const songName = item.song;
-        const tier = item.tier;
-        const method = item.method;
-
-        if (!songName || !tier) {
-            alert("Song name and tier not found in submission");
-            return;
+        function setStatus(message) {
+            document.getElementById("statusBox").innerText = message;
         }
 
-        // Verify and add to queue
-        const verifyResponse = await fetch(API_URL + "/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password, paymentId, songName, tier, method })
-        });
-
-        if (verifyResponse.ok) {
-            // Remove from pending
-            await fetch(API_URL + "/remove-pending-crypto", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentId, password })
-            });
-            
-            alert("Payment verified and added to queue!");
-            loadQueue();
-            loadPendingCrypto();
-        } else {
-            const data = await verifyResponse.json();
-            alert("Failed: " + (data.message || "unknown"));
+        function tierClass(tier) {
+            if (tier === "vip") return "vip";
+            if (tier === "express") return "express";
+            return "standard";
         }
-    } catch (error) {
-        console.log("Error verifying pending crypto:", error);
-        alert("Error verifying payment");
-    }
-}
 
-async function verifyPayment() {
-    const paymentId = document.getElementById("verifyPaymentId").value.trim();
-    const songName = document.getElementById("verifySongName").value.trim();
-    const tier = document.getElementById("verifyTier").value;
-    const method = document.getElementById("verifyMethod").value;
-    const password = prompt("Enter DJ password to verify payment:");
-    
-    if (!password) return;
-    if (!paymentId || !songName) {
-        alert("Please fill in all fields!");
-        return;
-    }
+        async function loadQueue() {
+            try {
+                const response = await fetch(APP_URL + "/queue");
+                const queue = await response.json();
 
-    const statusDiv = document.getElementById("verificationStatus");
-    statusDiv.textContent = "Verifying payment...";
-    statusDiv.style.color = "#fff";
+                let vip = 0, express = 0, standard = 0;
+                const queueList = document.getElementById("queueList");
+                queueList.innerHTML = "";
 
-    try {
-        const response = await fetch(API_URL + "/verify-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password, paymentId, songName, tier, method })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            statusDiv.textContent = "✅ Payment verified! Song added to queue.";
-            statusDiv.style.color = "#0f0";
-            // Clear form
-            document.getElementById("verifyPaymentId").value = "";
-            document.getElementById("verifySongName").value = "";
-            // Reload queue
-            loadQueue();
-        } else {
-            statusDiv.textContent = "❌ " + (data.message || "Verification failed");
-            statusDiv.style.color = "#f00";
+                queue.forEach((item, index) => {
+                    if (item.tier === "vip") vip++;
+                    if (item.tier === "express") express++;
+                    if (item.tier === "standard") standard++;
+
+                    const div = document.createElement("div");
+                    div.className = "queue-item";
+                    div.innerHTML = `
+                        <div class="queue-head">
+                            <div>
+                                <div class="song-name">#${index + 1} ${item.song}</div>
+                                <div class="meta">
+                                    Payment: ${item.paymentMethod || "yoco"}<br>
+                                    Status: ${item.status || "pending"}
+                                </div>
+                            </div>
+                            <div class="tier ${tierClass(item.tier)}">${item.tier.toUpperCase()}</div>
+                        </div>
+                        <div class="actions">
+                            <button class="success-btn" onclick="markPlayed(${item.id})">Mark Played</button>
+                        </div>
+                    `;
+                    queueList.appendChild(div);
+                });
+
+                document.getElementById("vipCount").innerText = vip;
+                document.getElementById("expressCount").innerText = express;
+                document.getElementById("standardCount").innerText = standard;
+
+                if (queue.length === 0) {
+                    queueList.innerHTML = `<div class="empty">No songs waiting right now.</div>`;
+                }
+            } catch (error) {
+                console.error(error);
+                setStatus("Error loading queue.");
+            }
         }
-    } catch (error) {
-        console.log("Error verifying payment:", error);
-        statusDiv.textContent = "❌ Error verifying payment";
-        statusDiv.style.color = "#f00";
-    }
-}
-</script>
 
+        async function loadPendingCrypto() {
+            try {
+                const response = await fetch(APP_URL + "/pending-crypto");
+                const pending = await response.json();
+
+                const pendingList = document.getElementById("pendingList");
+                pendingList.innerHTML = "";
+
+                pending.forEach((item) => {
+                    const div = document.createElement("div");
+                    div.className = "pending-item";
+                    div.innerHTML = `
+                        <div class="pending-head">
+                            <div>
+                                <div class="song-name">${item.song || "Unknown Song"}</div>
+                                <div class="meta">
+                                    Tier: ${item.tier || "-"}<br>
+                                    Method: ${item.method || "-"}<br>
+                                    Payment ID: ${item.paymentId || "-"}<br>
+                                    TXID: ${item.txid || "-"}<br>
+                                    Submitted: ${item.submitted_at || "-"}
+                                </div>
+                            </div>
+                            <div class="tier ${tierClass(item.tier || "standard")}">${(item.tier || "standard").toUpperCase()}</div>
+                        </div>
+                        <div class="actions">
+                            <button class="success-btn" onclick="verifyPayment('${item.paymentId}', '${escapeQuotes(item.song)}', '${item.tier}', '${item.method}')">Approve</button>
+                            <button class="danger-btn" onclick="removePendingCrypto('${item.paymentId}')">Remove</button>
+                        </div>
+                    `;
+                    pendingList.appendChild(div);
+                });
+
+                if (pending.length === 0) {
+                    pendingList.innerHTML = `<div class="empty">No pending crypto payments.</div>`;
+                }
+            } catch (error) {
+                console.error(error);
+                setStatus("Error loading pending crypto.");
+            }
+        }
+
+        function escapeQuotes(text) {
+            return String(text || "").replace(/'/g, "\\'");
+        }
+
+        async function markPlayed(id) {
+            if (!djPassword) {
+                setStatus("Enter DJ password first.");
+                return;
+            }
+
+            try {
+                const response = await fetch(APP_URL + "/mark-played", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password: djPassword, id })
+                });
+
+                const data = await response.json();
+                setStatus(data.message || "Song updated.");
+                loadQueue();
+            } catch (error) {
+                console.error(error);
+                setStatus("Error marking song as played.");
+            }
+        }
+
+        async function clearQueue() {
+            if (!djPassword) {
+                setStatus("Enter DJ password first.");
+                return;
+            }
+
+            const yes = confirm("Clear the whole queue?");
+            if (!yes) return;
+
+            try {
+                const response = await fetch(APP_URL + "/clear-queue", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ password: djPassword })
+                });
+
+                const data = await response.json();
+                setStatus(data.message || "Queue cleared.");
+                loadQueue();
+            } catch (error) {
+                console.error(error);
+                setStatus("Error clearing queue.");
+            }
+        }
+
+        async function verifyPayment(paymentId, songName, tier, method) {
+            if (!djPassword) {
+                setStatus("Enter DJ password first.");
+                return;
+            }
+
+            try {
+                const response = await fetch(APP_URL + "/verify-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        password: djPassword,
+                        paymentId,
+                        songName,
+                        tier,
+                        method
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    await fetch(APP_URL + "/remove-pending-crypto", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ paymentId, password: djPassword })
+                    });
+                }
+
+                setStatus(data.message || "Payment verified.");
+                loadQueue();
+                loadPendingCrypto();
+            } catch (error) {
+                console.error(error);
+                setStatus("Error verifying payment.");
+            }
+        }
+
+        async function removePendingCrypto(paymentId) {
+            if (!djPassword) {
+                setStatus("Enter DJ password first.");
+                return;
+            }
+
+            try {
+                const response = await fetch(APP_URL + "/remove-pending-crypto", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentId, password: djPassword })
+                });
+
+                const data = await response.json();
+                setStatus(data.message || "Pending crypto removed.");
+                loadPendingCrypto();
+            } catch (error) {
+                console.error(error);
+                setStatus("Error removing pending crypto.");
+            }
+        }
+
+        updateClock();
+        loadQueue();
+        loadPendingCrypto();
+
+        setInterval(updateClock, 1000);
+        setInterval(loadQueue, 5000);
+        setInterval(loadPendingCrypto, 7000);
+    </script>
 </body>
 </html>

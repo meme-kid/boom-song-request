@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boom Song Request - Earnings Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(255, 196, 0, 0.12), transparent 25%),
+                radial-gradient(circle at bottom, rgba(255, 0, 140, 0.08), transparent 20%),
+                linear-gradient(180deg, #080808 0%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            color: #ffd54a;
+            font-size: 34px;
+        }
+
+        .brand p {
+            margin: 6px 0 0 0;
+            color: #d0d0d0;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.14), rgba(255, 140, 0, 0.08));
+            border: 1px solid rgba(255, 215, 0, 0.22);
+            border-radius: 20px;
+            padding: 22px;
+            margin-bottom: 22px;
+        }
+
+        .hero h2 {
+            margin: 0 0 8px 0;
+            color: #ffd54a;
+            font-size: 28px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #ececec;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            color: #d8d8d8;
+            font-size: 15px;
+            font-weight: normal;
+        }
+
+        .big-number {
+            font-size: 34px;
+            font-weight: bold;
+            color: #ffd54a;
+        }
+
+        .section-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 22px;
+        }
+
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+        }
+
+        .panel h2 {
+            margin: 0 0 16px 0;
+            color: #ffd54a;
+            font-size: 24px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 12px;
+        }
+
+        .row:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: #ececec;
+            font-size: 16px;
+        }
+
+        .value {
+            color: #ffd54a;
+            font-weight: bold;
+            font-size: 18px;
+            text-align: right;
+        }
+
+        .history-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.22);
+        }
+
+        .history-panel h2 {
+            margin: 0 0 16px 0;
+            color: #ffd54a;
+            font-size: 24px;
+        }
+
+        .history-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .history-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .history-meta {
+            color: #cccccc;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .vip { color: #ffd54a; }
+        .express { color: #4dc3ff; }
+        .standard { color: #e6e6e6; }
+
+        .empty {
+            text-align: center;
+            color: #bbbbbb;
+            padding: 24px 8px;
+        }
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .section-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="topbar">
+            <div class="brand">
+                <h1>BOOM SONG REQUEST 💥</h1>
+                <p>Earnings Dashboard</p>
+            </div>
+            <div class="badge" id="liveClock">LIVE</div>
+        </div>
+
+        <div class="hero">
+            <h2>💰 Tonight's Performance</h2>
+            <p>Track revenue, song volume, tier performance, and payment behavior in real time.</p>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Total Revenue</h3>
+                <div class="big-number" id="totalRevenue">R0</div>
+            </div>
+            <div class="card">
+                <h3>Total Songs</h3>
+                <div class="big-number" id="totalSongs">0</div>
+            </div>
+            <div class="card">
+                <h3>Pending Songs</h3>
+                <div class="big-number" id="pendingSongs">0</div>
+            </div>
+            <div class="card">
+                <h3>Played Songs</h3>
+                <div class="big-number" id="playedSongs">0</div>
+            </div>
+        </div>
+
+        <div class="section-grid">
+            <div class="panel">
+                <h2>🎯 Tier Revenue</h2>
+
+                <div class="row">
+                    <div class="label vip">VIP</div>
+                    <div class="value" id="vipRevenue">R0</div>
+                </div>
+                <div class="row">
+                    <div class="label express">Express</div>
+                    <div class="value" id="expressRevenue">R0</div>
+                </div>
+                <div class="row">
+                    <div class="label standard">Standard</div>
+                    <div class="value" id="standardRevenue">R0</div>
+                </div>
+
+                <h2 style="margin-top:22px;">📦 Tier Counts</h2>
+
+                <div class="row">
+                    <div class="label vip">VIP Requests</div>
+                    <div class="value" id="vipCount">0</div>
+                </div>
+                <div class="row">
+                    <div class="label express">Express Requests</div>
+                    <div class="value" id="expressCount">0</div>
+                </div>
+                <div class="row">
+                    <div class="label standard">Standard Requests</div>
+                    <div class="value" id="standardCount">0</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>💳 Payment Method Breakdown</h2>
+                <div id="paymentBreakdown"></div>
+            </div>
+        </div>
+
+        <div class="history-panel">
+            <h2>🧾 Song History</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_URL = "https://www.boomsongrequest.com";
+
+        function money(value) {
+            return "R" + Number(value || 0).toLocaleString();
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("liveClock").innerText =
+                "LIVE • " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(APP_URL + "/stats");
+                const data = await response.json();
+
+                document.getElementById("totalRevenue").innerText = money(data.totalRevenue);
+                document.getElementById("totalSongs").innerText = data.totalSongs || 0;
+                document.getElementById("pendingSongs").innerText = data.pendingSongs || 0;
+                document.getElementById("playedSongs").innerText = data.playedSongs || 0;
+
+                document.getElementById("vipRevenue").innerText = money(data.tierRevenue?.vip || 0);
+                document.getElementById("expressRevenue").innerText = money(data.tierRevenue?.express || 0);
+                document.getElementById("standardRevenue").innerText = money(data.tierRevenue?.standard || 0);
+
+                document.getElementById("vipCount").innerText = data.tierCounts?.vip || 0;
+                document.getElementById("expressCount").innerText = data.tierCounts?.express || 0;
+                document.getElementById("standardCount").innerText = data.tierCounts?.standard || 0;
+
+                const paymentBox = document.getElementById("paymentBreakdown");
+                paymentBox.innerHTML = "";
+
+                const methods = data.paymentMethodCounts || {};
+                const methodRevenue = data.paymentMethodRevenue || {};
+
+                const keys = Object.keys(methods);
+
+                if (keys.length === 0) {
+                    paymentBox.innerHTML = `<div class="empty">No payment data yet.</div>`;
+                } else {
+                    keys.forEach((method) => {
+                        const div = document.createElement("div");
+                        div.className = "row";
+                        div.innerHTML = `
+                            <div class="label">${method.toUpperCase()}</div>
+                            <div class="value">${methods[method]} requests • ${money(methodRevenue[method] || 0)}</div>
+                        `;
+                        paymentBox.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error("Stats error:", error);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch(APP_URL + "/queue-history");
+                const data = await response.json();
+
+                const historyList = document.getElementById("historyList");
+                historyList.innerHTML = "";
+
+                if (!data.length) {
+                    historyList.innerHTML = `<div class="empty">No song history yet.</div>`;
+                    return;
+                }
+
+                data.slice(0, 20).forEach((item) => {
+                    const div = document.createElement("div");
+                    div.className = "history-item";
+                    div.innerHTML = `
+                        <div class="history-title">${item.song}</div>
+                        <div class="history-meta">
+                            Tier: <span class="${item.tier}">${(item.tier || "").toUpperCase()}</span><br>
+                            Payment: ${(item.paymentMethod || "unknown").toUpperCase()}<br>
+                            Status: ${(item.status || "pending").toUpperCase()}<br>
+                            Payment ID: ${item.paymentId || "-"}
+                        </div>
+                    `;
+                    historyList.appendChild(div);
+                });
+            } catch (error) {
+                console.error("History error:", error);
+            }
+        }
+
+        updateClock();
+        loadStats();
+        loadHistory();
+
+        setInterval(updateClock, 1000);
+        setInterval(loadStats, 5000);
+        setInterval(loadHistory, 7000);
+    </script>
+</body>
+</html>

@@ -827,6 +827,109 @@ app.get("/app-status", (req, res) => {
     });
 });
 
+app.get("/stats", (req, res) => {
+    const tierPrices = {
+        standard: 150,
+        express: 250,
+        vip: 500
+    };
+
+    db.all(
+        "SELECT id, tier, paymentMethod, status FROM queue",
+        [],
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ message: "Database error" });
+            }
+
+            let totalRevenue = 0;
+            const totalSongs = rows.length;
+            let pendingSongs = 0;
+            let playedSongs = 0;
+
+            const tierCounts = {
+                standard: 0,
+                express: 0,
+                vip: 0
+            };
+
+            const tierRevenue = {
+                standard: 0,
+                express: 0,
+                vip: 0
+            };
+
+            const paymentMethodCounts = {};
+            const paymentMethodRevenue = {};
+
+            rows.forEach((row) => {
+                const tier = row.tier || "standard";
+                const method = row.paymentMethod || "unknown";
+                const amount = tierPrices[tier] || 0;
+
+                totalRevenue += amount;
+
+                if (row.status === "played") {
+                    playedSongs++;
+                } else {
+                    pendingSongs++;
+                }
+
+                tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+                tierRevenue[tier] = (tierRevenue[tier] || 0) + amount;
+
+                paymentMethodCounts[method] = (paymentMethodCounts[method] || 0) + 1;
+                paymentMethodRevenue[method] = (paymentMethodRevenue[method] || 0) + amount;
+            });
+
+            res.json({
+                totalRevenue,
+                totalSongs,
+                pendingSongs,
+                playedSongs,
+                tierCounts,
+                tierRevenue,
+                paymentMethodCounts,
+                paymentMethodRevenue
+            });
+        }
+    );
+});
+
+app.get("/queue-history", (req, res) => {
+    db.all(
+        "SELECT * FROM queue ORDER BY id DESC",
+        [],
+        (err, rows) => {
+            if (err) {
+                return res.status(500).json({ message: "Database error" });
+            }
+
+            res.json(rows);
+        }
+    );
+});
+
+app.post("/remove-song", (req, res) => {
+    const { password, id } = req.body;
+
+    if (password !== DJ_PASSWORD) {
+        return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    if (!id) {
+        return res.status(400).json({ message: "Song ID required" });
+    }
+
+    db.run("DELETE FROM queue WHERE id = ?", [id], function(err) {
+        if (err) {
+            return res.status(500).json({ message: "Database error" });
+        }
+
+        res.json({ message: "Song removed successfully" });
+    });
+});
+
 // =======================
 // Clear Queue (DJ Only)
 // =======================
