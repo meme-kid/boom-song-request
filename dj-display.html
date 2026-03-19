@@ -3,303 +3,430 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Large-screen BOOM DJ display showing now playing, upcoming songs, and live queue stats.">
-    <meta name="theme-color" content="#0a0a0a">
-    <title>DJ Display - BOOM Song Request</title>
+    <title>Boom Song Request - DJ Display</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            background: radial-gradient(circle at top, #0a0a0a, #000);
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(255, 196, 0, 0.12), transparent 25%),
+                radial-gradient(circle at bottom, rgba(255, 0, 140, 0.10), transparent 20%),
+                linear-gradient(180deg, #050505 0%, #000000 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 42px;
+            color: #ffd54a;
+            letter-spacing: 1px;
+            text-shadow: 0 0 18px rgba(255, 213, 74, 0.3);
+        }
+
+        .brand p {
+            margin: 8px 0 0 0;
+            color: #cfcfcf;
+            font-size: 18px;
+        }
+
+        .live-badge {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 14px;
+            padding: 14px 18px;
+            font-size: 18px;
             color: #fff;
-            font-family: 'Segoe UI', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
+        .hero {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.14), rgba(255, 140, 0, 0.08));
+            border: 1px solid rgba(255, 215, 0, 0.22);
+            border-radius: 22px;
+            padding: 22px;
+            margin-bottom: 24px;
+            box-shadow: 0 0 24px rgba(255, 215, 0, 0.08);
         }
 
-        .card {
+        .hero h2 {
+            margin: 0 0 8px 0;
+            font-size: 34px;
+            color: #ffd54a;
+        }
+
+        .hero p {
+            margin: 0;
+            color: #ededed;
+            font-size: 18px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 22px;
+        }
+
+        .panel {
             background: rgba(255,255,255,0.05);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.22);
         }
 
-        .header {
-            background: linear-gradient(135deg, #ff0000, #ff4444);
-            padding: 20px;
-            text-align: center;
-            font-size: 48px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
-        }
-
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
+        .panel h3 {
+            margin: 0 0 18px 0;
+            color: #ffd54a;
+            font-size: 28px;
         }
 
         .now-playing {
-            background: linear-gradient(135deg, #ffd700, #ffb700);
-            color: black;
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 36px;
-            font-weight: bold;
-            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
-        }
-
-        .queue-section {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 20px;
-            padding: 30px;
-            border: 3px solid #333;
-            overflow: hidden;
+            min-height: 220px;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 30px;
+            text-align: center;
         }
 
-        .queue-title {
-            font-size: 32px;
+        .now-label {
+            color: #bbbbbb;
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+        }
+
+        .now-song {
+            font-size: 42px;
             font-weight: bold;
-            margin-bottom: 20px;
+            color: #ffffff;
+            line-height: 1.2;
+            margin-bottom: 14px;
+        }
+
+        .now-tier {
+            display: inline-block;
+            margin: 0 auto;
+            padding: 10px 16px;
+            border-radius: 999px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .tier-vip {
+            background: linear-gradient(45deg, #ffd54a, #ff9f1a);
+            color: black;
+            box-shadow: 0 0 20px rgba(255, 213, 74, 0.22);
+        }
+
+        .tier-express {
+            background: linear-gradient(45deg, #4dc3ff, #277bff);
+            color: white;
+            box-shadow: 0 0 20px rgba(77, 195, 255, 0.18);
+        }
+
+        .tier-standard {
+            background: rgba(255,255,255,0.14);
+            color: white;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
             text-align: center;
-            color: #ffd700;
+        }
+
+        .stat-number {
+            font-size: 34px;
+            font-weight: bold;
+            color: #ffd54a;
+        }
+
+        .stat-label {
+            margin-top: 6px;
+            color: #d4d4d4;
+            font-size: 15px;
         }
 
         .queue-list {
-            flex: 1;
-            overflow-y: auto;
-            max-height: calc(100vh - 400px);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 640px;
+            overflow: hidden;
         }
 
         .queue-item {
             display: flex;
             align-items: center;
-            padding: 20px;
-            margin: 10px 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-            border-radius: 15px;
-            border-left: 8px solid;
-            font-size: 28px;
+            gap: 16px;
+            border-radius: 18px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .queue-number {
+            width: 56px;
+            height: 56px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.08);
+            font-size: 22px;
             font-weight: bold;
-            transition: all 0.3s ease;
+            color: #ffd54a;
         }
 
-        .queue-item.vip {
-            border-left-color: #ffd700;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
-        }
-
-        .queue-item.express {
-            border-left-color: #4dabf7;
-            background: linear-gradient(135deg, rgba(77, 171, 247, 0.2), rgba(77, 171, 247, 0.1));
-        }
-
-        .queue-item.standard {
-            border-left-color: #888;
-            background: linear-gradient(135deg, rgba(136, 136, 136, 0.2), rgba(136, 136, 136, 0.1));
-        }
-
-        .queue-item.playing {
-            animation: pulse 1s ease-in-out infinite;
-            border-left-color: #ff6b6b;
-            background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 107, 107, 0.2));
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        .queue-position {
-            font-size: 24px;
-            margin-right: 20px;
-            color: #fff;
-            min-width: 40px;
-        }
-
-        .song-info {
+        .queue-content {
             flex: 1;
         }
 
-        .song-title {
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-
-        .song-tier {
-            font-size: 20px;
-            opacity: 0.8;
-        }
-
-        .empty-queue {
-            text-align: center;
-            font-size: 32px;
-            color: #666;
-            padding: 50px;
-        }
-
-        .stats-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .queue-song {
             font-size: 24px;
-            border-top: 3px solid #ffd700;
-        }
-
-        .stats-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .stats-value {
             font-weight: bold;
-            color: #ffd700;
+            margin-bottom: 6px;
         }
 
-        @media (max-width: 768px) {
-            .header { font-size: 32px; padding: 15px; }
-            .now-playing { font-size: 24px; padding: 20px; }
-            .queue-title { font-size: 24px; }
-            .queue-item { font-size: 20px; padding: 15px; }
-            .song-title { font-size: 20px; }
-            .stats-bar { font-size: 18px; padding: 10px 20px; }
+        .queue-meta {
+            font-size: 15px;
+            color: #d0d0d0;
+        }
+
+        .queue-tier {
+            min-width: 130px;
+            text-align: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .upsell-box {
+            margin-top: 20px;
+            border-radius: 18px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.14), rgba(255, 140, 0, 0.06));
+            border: 1px solid rgba(255, 215, 0, 0.18);
+            text-align: center;
+        }
+
+        .upsell-box h4 {
+            margin: 0 0 10px 0;
+            color: #ffd54a;
+            font-size: 24px;
+        }
+
+        .upsell-box p {
+            margin: 0;
+            color: #f0f0f0;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        .empty {
+            text-align: center;
+            color: #c9c9c9;
+            font-size: 20px;
+            padding: 50px 10px;
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            text-align: center;
+            color: #aaaaaa;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1100px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .now-song {
+                font-size: 34px;
+            }
+
+            .queue-song {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        🎵 BOOM SONG REQUEST 🎵
-    </div>
+    <div class="wrapper">
 
-    <div class="main-content">
-        <div class="container">
-            <div class="card" style="margin-bottom: 20px;">
-                <div class="now-playing" id="nowPlaying">
-                    🎧 NOW PLAYING: [No song playing]
+        <div class="topbar">
+            <div class="brand">
+                <h1>BOOM SONG REQUEST 💥</h1>
+                <p>Live DJ Queue Display</p>
+            </div>
+            <div class="live-badge" id="liveClock">LIVE</div>
+        </div>
+
+        <div class="hero">
+            <h2>🔥 Tonight’s Queue</h2>
+            <p>VIP plays first. Express skips the normal line. Scan the QR and control the vibe.</p>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h3>🎧 Now Playing / Next Up</h3>
+
+                <div class="now-playing">
+                    <div class="now-label">NEXT PRIORITY REQUEST</div>
+                    <div class="now-song" id="nowPlayingSong">Waiting for the next hit...</div>
+                    <div class="now-tier tier-standard" id="nowPlayingTier">OPEN QUEUE</div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="vipCount">0</div>
+                        <div class="stat-label">VIP Waiting</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="expressCount">0</div>
+                        <div class="stat-label">Express Waiting</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="standardCount">0</div>
+                        <div class="stat-label">Standard Waiting</div>
+                    </div>
+                </div>
+
+                <div class="upsell-box">
+                    <h4>⚡ Want your song played faster?</h4>
+                    <p>Upgrade to <strong>VIP</strong> to jump ahead of everyone and take over the vibe.</p>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="queue-title">📋 UPCOMING SONGS</div>
+            <div class="panel">
+                <h3>📋 Live Queue</h3>
                 <div class="queue-list" id="queueList">
-                    <div class="empty-queue">Queue is empty - Request a song!</div>
+                    <div class="empty">No songs in queue yet. Be the first to drop the next anthem.</div>
+                </div>
+                <div class="footer-note">
+                    boomsongrequest.com
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="stats-bar">
-        <div class="stats-item">
-            <span>💰 Tonight:</span>
-            <span class="stats-value" id="tonightEarnings">R0</span>
-        </div>
-        <div class="stats-item">
-            <span>🎵 Total Songs:</span>
-            <span class="stats-value" id="totalSongs">0</span>
-        </div>
-        <div class="stats-item">
-            <span>⭐ VIP Spots Left:</span>
-            <span class="stats-value" id="vipSpotsLeft">3</span>
-        </div>
-    </div>
+    <script>
+        const APP_URL = "https://www.boomsongrequest.com";
 
-<script src="config.js"></script>
-<script>
-let currentQueue = [];
-let tonightEarnings = 0;
-let totalSongs = 0;
+        function getTierClass(tier) {
+            if (tier === "vip") return "tier-vip";
+            if (tier === "express") return "tier-express";
+            return "tier-standard";
+        }
 
-async function updateDisplay() {
-    try {
-        // Fetch queue data
-        const queueResponse = await fetch(API_URL + '/queue');
-        const queueData = await queueResponse.json();
+        function getTierLabel(tier) {
+            if (tier === "vip") return "VIP";
+            if (tier === "express") return "EXPRESS";
+            return "STANDARD";
+        }
 
-        // Fetch earnings data (we'll add this endpoint)
-        const earningsResponse = await fetch(API_URL + '/earnings');
-        const earningsData = await earningsResponse.json();
+        function updateClock() {
+            const now = new Date();
+            document.getElementById("liveClock").innerText =
+                "LIVE • " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        }
 
-        updateQueue(queueData);
-        updateStats(earningsData);
-    } catch (error) {
-        console.error('Error updating display:', error);
-    }
-}
+        async function loadQueueDisplay() {
+            try {
+                const response = await fetch(APP_URL + "/queue");
+                const queue = await response.json();
 
-function updateQueue(queue) {
-    const queueList = document.getElementById('queueList');
-    const nowPlaying = document.getElementById('nowPlaying');
+                let vip = 0;
+                let express = 0;
+                let standard = 0;
 
-    if (queue.length === 0) {
-        queueList.innerHTML = '<div class="empty-queue">Queue is empty - Request a song!</div>';
-        nowPlaying.innerHTML = '🎧 NOW PLAYING: [No song playing]';
-        return;
-    }
+                const queueList = document.getElementById("queueList");
+                queueList.innerHTML = "";
 
-    // First song is "now playing"
-    const nowPlayingSong = queue[0];
-    nowPlaying.innerHTML = `🎧 NOW PLAYING: ${nowPlayingSong.song} (${nowPlayingSong.tier.toUpperCase()})`;
+                queue.forEach((item) => {
+                    if (item.tier === "vip") vip++;
+                    if (item.tier === "express") express++;
+                    if (item.tier === "standard") standard++;
+                });
 
-    // Rest are upcoming
-    const upcomingSongs = queue.slice(1);
-    if (upcomingSongs.length === 0) {
-        queueList.innerHTML = '<div class="empty-queue">No upcoming songs</div>';
-        return;
-    }
+                document.getElementById("vipCount").innerText = vip;
+                document.getElementById("expressCount").innerText = express;
+                document.getElementById("standardCount").innerText = standard;
 
-    const queueHtml = upcomingSongs.map((song, index) => `
-        <div class="queue-item ${song.tier}">
-            <div class="queue-position">#${index + 2}</div>
-            <div class="song-info">
-                <div class="song-title">${song.song}</div>
-                <div class="song-tier">${song.tier.toUpperCase()} • ${song.paymentMethod}</div>
-            </div>
-        </div>
-    `).join('');
+                if (queue.length > 0) {
+                    const top = queue[0];
+                    const nowSong = document.getElementById("nowPlayingSong");
+                    const nowTier = document.getElementById("nowPlayingTier");
 
-    queueList.innerHTML = queueHtml;
-}
+                    nowSong.innerText = top.song;
+                    nowTier.innerText = getTierLabel(top.tier);
+                    nowTier.className = "now-tier " + getTierClass(top.tier);
 
-function updateStats(earnings) {
-    document.getElementById('tonightEarnings').textContent = `R${earnings.tonight || 0}`;
-    document.getElementById('totalSongs').textContent = earnings.totalSongs || 0;
+                    queue.slice(0, 8).forEach((item, index) => {
+                        const div = document.createElement("div");
+                        div.className = "queue-item";
+                        div.innerHTML = `
+                            <div class="queue-number">${index + 1}</div>
+                            <div class="queue-content">
+                                <div class="queue-song">${item.song}</div>
+                                <div class="queue-meta">Priority request in live rotation</div>
+                            </div>
+                            <div class="queue-tier ${getTierClass(item.tier)}">${getTierLabel(item.tier)}</div>
+                        `;
+                        queueList.appendChild(div);
+                    });
+                } else {
+                    document.getElementById("nowPlayingSong").innerText = "Waiting for the next hit...";
+                    const nowTier = document.getElementById("nowPlayingTier");
+                    nowTier.innerText = "OPEN QUEUE";
+                    nowTier.className = "now-tier tier-standard";
 
-    // Calculate VIP spots left (3 per hour, reset hourly)
-    const now = new Date();
-    const currentHour = now.getHours();
-    const vipRequestsThisHour = earnings.vipThisHour || 0;
-    const vipSpotsLeft = Math.max(0, 3 - vipRequestsThisHour);
-    document.getElementById('vipSpotsLeft').textContent = vipSpotsLeft;
-}
+                    queueList.innerHTML = `<div class="empty">No songs in queue yet. Be the first to drop the next anthem.</div>`;
+                }
+            } catch (error) {
+                console.error("Queue display error:", error);
+            }
+        }
 
-// Update every 5 seconds
-setInterval(updateDisplay, 5000);
+        updateClock();
+        loadQueueDisplay();
 
-// Initial load
-updateDisplay();
-</script>
+        setInterval(updateClock, 1000);
+        setInterval(loadQueueDisplay, 5000);
+    </script>
 </body>
 </html>
