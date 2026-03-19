@@ -117,11 +117,11 @@
     <div class="container">
         <h1>📱 Scan to Open the App</h1>
 
-        <div class="qr-code" id="qrContainer">
-            <p>Generating QR code...</p>
+        <div class="qr-code">
+            <img id="qrImage" src="" alt="QR Code" style="width: 300px; height: 300px;">
         </div>
 
-        <div class="link" id="linkText"></div>
+        <div class="link" id="linkText">https://www.boomsongrequest.com</div>
 
         <div style="margin-top: 20px; text-align: left; max-width: 540px; margin-left: auto; margin-right: auto;">
             <p style="color: #aaa; font-size: 14px;">
@@ -137,32 +137,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
-        const params = new URLSearchParams(window.location.search);
-        const explicitUrl = params.get('url');
-        const qrContainer = document.getElementById('qrContainer');
-        const linkText = document.getElementById('linkText');
-
-        const createQr = (url) => {
-            linkText.textContent = url;
-            qrContainer.innerHTML = "";
-            new QRCode(qrContainer, {
-                text: url,
-                width: 220,
-                height: 220,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        };
-
-        const showMessage = (msg) => {
-            linkText.textContent = msg;
-        };
-
-        const useUrl = explicitUrl || window.location.origin;
-
-        // Display the default QR (may be localhost)
-        createQr(useUrl);
+        function generateQR() {
+            const url = "https://www.boomsongrequest.com";
+            document.getElementById("qrImage").src =
+                "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(url);
+            document.getElementById("linkText").textContent = url;
+        }
 
         function generateCustomQr() {
             const input = document.getElementById('customUrl').value.trim();
@@ -173,11 +153,16 @@
 
             try {
                 const testUrl = new URL(input);
-                createQr(testUrl.toString());
+                document.getElementById("qrImage").src =
+                    "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(testUrl.toString());
+                document.getElementById("linkText").textContent = testUrl.toString();
             } catch (e) {
                 alert('Invalid URL. Use format: http://192.168.x.x:4000');
             }
         }
+
+        // Generate QR on page load
+        generateQR();
     </script>
 </body>
 </html>

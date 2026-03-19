@@ -1,343 +1,540 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Club BOOM Request</title>
+    <title>Boom Song Request</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            padding: 20px;
             margin: 0;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(255, 184, 0, 0.18), transparent 25%),
+                radial-gradient(circle at bottom, rgba(255, 0, 128, 0.12), transparent 20%),
+                linear-gradient(180deg, #090909 0%, #000000 100%);
+            color: white;
             min-height: 100vh;
         }
 
-        h1 {
-            font-size: 2.2rem;
-            margin: 20px 0;
-            background: linear-gradient(135deg, #ffd700, #ffed4e);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .container {
+            max-width: 460px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
         }
 
-        .form-group { margin: 14px 0; }
+        .brand {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 34px;
+            letter-spacing: 1px;
+            color: #ffd54a;
+            text-shadow: 0 0 14px rgba(255, 213, 74, 0.4);
+        }
+
+        .brand p {
+            margin-top: 8px;
+            color: #d9d9d9;
+            font-size: 15px;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.14), rgba(255, 140, 0, 0.08));
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 18px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.08);
+        }
+
+        .hero-banner h2 {
+            margin: 0 0 8px 0;
+            font-size: 22px;
+            color: #ffd54a;
+        }
+
+        .hero-banner p {
+            margin: 0;
+            color: #f3f3f3;
+            font-size: 14px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+        }
+
+        .section-title {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #ffd54a;
+        }
+
+        .subtext {
+            color: #cfcfcf;
+            font-size: 14px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
 
         label {
             display: block;
             margin-bottom: 8px;
-            font-size: 16px;
-            font-weight: 500;
+            font-weight: bold;
+            color: #f7f7f7;
         }
 
-        select {
+        input, select {
             width: 100%;
-            max-width: 420px;
-            padding: 14px 16px;
-            font-size: 16px;
+            padding: 14px;
             border-radius: 12px;
-            border: 2px solid #333;
-            background: #111;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.08);
             color: white;
-            transition: all 0.3s ease;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 14px;
+        }
+
+        input::placeholder {
+            color: #bbbbbb;
         }
 
         select option {
-            background: #111;
-            color: inherit;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: #ffd700;
-            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-        }
-
-        input::placeholder { color: #888; }
-
-        button {
-            width: 100%;
-            max-width: 420px;
-            padding: 14px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #ffd700, #ffb700);
             color: black;
-            border: none;
+        }
+
+        .tier-grid {
+            display: grid;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .tier-card {
+            border-radius: 14px;
+            padding: 14px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.04);
+        }
+
+        .tier-card.selected {
+            border-color: #ffd54a;
+            box-shadow: 0 0 16px rgba(255, 213, 74, 0.16);
+        }
+
+        .tier-card.vip {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 140, 0, 0.08));
+        }
+
+        .tier-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .tier-price {
+            color: #ffd54a;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .tier-desc {
+            color: #d6d6d6;
+            font-size: 13px;
+        }
+
+        .benefits {
+            margin-top: 10px;
+            padding: 12px;
             border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin: 10px auto;
-            display: block;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        #message {
-            margin: 16px 0;
-            padding: 12px 16px;
-            border-radius: 10px;
-            min-height: 20px;
+            background: rgba(255,255,255,0.04);
+            line-height: 1.7;
+            color: #efefef;
             font-size: 14px;
         }
 
-        #message.error {
-            background: rgba(255, 0, 0, 0.1);
-            color: #ff6b6b;
-            border: 1px solid #ff6b6b;
+        .benefits strong {
+            color: #ffd54a;
         }
 
-        #message.success {
-            background: rgba(0, 255, 0, 0.1);
-            color: #51cf66;
-            border: 1px solid #51cf66;
+        .urgency {
+            margin-top: 12px;
+            color: #ffb347;
+            font-weight: bold;
+            font-size: 14px;
         }
 
-        .queue {
-            margin-top: 40px;
-            max-width: 520px;
-            margin-left: auto;
-            margin-right: auto;
+        .payment-box {
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            font-size: 14px;
+            color: #e7e7e7;
+        }
+
+        .button-group {
+            display: grid;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        button {
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        .pay-btn {
+            background: linear-gradient(45deg, #ffd54a, #ff9f1a);
+            color: black;
+            box-shadow: 0 0 18px rgba(255, 200, 0, 0.25);
+        }
+
+        .qr-btn {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .status-box {
+            min-height: 54px;
+            border-radius: 12px;
+            padding: 14px;
+            background: rgba(255,255,255,0.04);
+            color: #f2f2f2;
+            line-height: 1.5;
+        }
+
+        .queue-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 14px 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .stat-number {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffd54a;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #d8d8d8;
+            margin-top: 4px;
+        }
+
+        .live-queue {
+            margin-top: 14px;
+        }
+
+        .queue-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .queue-item strong {
+            color: #ffd54a;
+        }
+
+        .qr-popup {
+            display: none;
+            margin-top: 14px;
             text-align: center;
         }
 
-        #requestStatus {
-            background: rgba(255, 215, 0, 0.08);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 15px;
-            line-height: 1.6;
+        .qr-popup img {
+            width: 220px;
+            max-width: 100%;
+            border-radius: 16px;
+            background: white;
+            padding: 10px;
         }
 
-        .scarcity-message {
-            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 215, 0, 0.1));
-            border: 2px solid #ff4444;
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin: 12px auto;
-            max-width: 420px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #ff6b6b;
-            animation: pulse 2s ease-in-out infinite;
-            box-shadow: 0 0 15px rgba(255, 68, 68, 0.3);
+        .small-note {
+            margin-top: 10px;
+            color: #bdbdbd;
+            font-size: 13px;
+            text-align: center;
         }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-        }
-
-        @media (max-width: 480px) {
-            body { padding: 16px; }
-            h1 { font-size: 1.8rem; }
-            input, select, button {
-                max-width: 100%;
-                font-size: 16px;
-            }
+        .glow {
+            color: #ffd54a;
+            text-shadow: 0 0 10px rgba(255, 213, 74, 0.35);
         }
     </style>
 </head>
 <body>
+    <div class="container">
 
-    <h1>🎵 BOOM SONG REQUEST</h1>
-
-    <p style="color: #ccc; margin-bottom: 20px; font-size: 16px;">What song do you want to hear?</p>
-
-    <div class="form-group">
-        <label for="songInput">Song Name:</label>
-        <input type="text" id="songInput" placeholder="Enter the song name below" autocomplete="off">
-    </div>
-
-    <div class="form-group">
-        <label for="tierSelect">Select Priority Tier</label>
-        <select id="tierSelect">
-            <option value="standard" style="color: #888;">⭐ Standard – R150</option>
-            <option value="express" selected style="color: #4dabf7;">⭐⭐ Express – R250</option>
-            <option value="vip" style="color: #ffd43b; font-weight: bold;">⭐⭐⭐ VIP – R500 🔥 MOST POPULAR</option>
-        </select>
-    </div>
-
-    <div class="scarcity-message">🔥 Only 2 VIP spots available per hour</div>
-
-    <div class="tier-info" style="background-color: #1a1a1a; padding: 12px; border-radius: 8px; margin: 10px 0; border: 1px solid #333;">
-        <div style="color: #ff6b6b; font-weight: bold; margin-bottom: 8px;">🎯 Priority Benefits</div>
-        <div style="font-size: 14px; line-height: 1.4;">
-            🔥 VIP requests play before all other songs<br>
-            ⚡ Express jumps ahead of the normal queue<br>
-            🎵 Standard joins the regular queue
+        <div class="brand">
+            <h1>BOOM SONG REQUEST 💥</h1>
+            <p>Control the music. Skip the queue.</p>
         </div>
-        <div style="color: #ffd43b; font-size: 13px; margin-top: 8px; font-weight: bold;">
-            ⚡ VIP requests usually play within 2–3 songs
+
+        <div class="hero-banner">
+            <h2>🔥 Skip the Queue. Control the Vibe.</h2>
+            <p>Request your song now and boost it with priority access.</p>
         </div>
-    </div>
 
-    <div class="form-group">
-        <label for="paymentMethod">Choose Payment Method</label>
-        <select id="paymentMethod">
-            <option value="yoco">💳 Card Payment (Card payments coming soon)</option>
-            <option value="payfast">₿ Pay with Crypto / Wallet</option>
-            <option value="usdt">💰 USDT (TRC20)</option>
-            <option value="btc">₿ Bitcoin</option>
-        </select>
-    </div>
+        <div class="card">
+            <h3 class="section-title">🎵 What song do you want to hear?</h3>
+            <p class="subtext">Enter the song name below and choose how fast you want it played.</p>
 
-    <div style="margin: 20px 0;">
-        <button id="submitBtn" onclick="requestSong()">🎧 Pay & Request Song</button>
-        <button onclick="window.location.href='qr.html?url=' + encodeURIComponent(window.location.origin)">📲 Share App QR</button>
-    </div>
+            <label for="songInput">Song Name</label>
+            <input type="text" id="songInput" placeholder="Enter song name" maxlength="100">
 
-    <p id="message"></p>
+            <label for="tierSelect">Select Priority Tier</label>
+            <select id="tierSelect" onchange="highlightTier(); updateStatusPreview();">
+                <option value="vip">⭐⭐⭐ VIP - R500</option>
+                <option value="express" selected>⭐⭐ Express - R250</option>
+                <option value="standard">⭐ Standard - R150</option>
+            </select>
 
-    <div class="queue">
-        <h2>Your Request Status</h2>
-        <div id="requestStatus">Waiting for payment confirmation…</div>
-        
-        <div id="queueStatus" style="margin-top: 20px; background-color: #1a1a1a; padding: 12px; border-radius: 8px; border: 1px solid #333;">
-            <div style="color: #ffd43b; font-weight: bold; margin-bottom: 8px;">📊 Queue Status</div>
-            <div id="queueStats" style="font-size: 14px; line-height: 1.6;">
-                Loading queue status...
+            <div class="tier-grid">
+                <div class="tier-card vip" id="tier-vip">
+                    <div class="tier-name">⭐⭐⭐ VIP <span class="glow">MOST POPULAR</span></div>
+                    <div class="tier-price">R500</div>
+                    <div class="tier-desc">Play before all other requests.</div>
+                </div>
+
+                <div class="tier-card" id="tier-express">
+                    <div class="tier-name">⭐⭐ Express</div>
+                    <div class="tier-price">R250</div>
+                    <div class="tier-desc">Jump ahead of the normal queue.</div>
+                </div>
+
+                <div class="tier-card" id="tier-standard">
+                    <div class="tier-name">⭐ Standard</div>
+                    <div class="tier-price">R150</div>
+                    <div class="tier-desc">Join the regular request line.</div>
+                </div>
+            </div>
+
+            <div class="benefits">
+                <strong>🎯 Priority Benefits</strong><br>
+                🔥 VIP requests play before all other songs<br>
+                ⚡ Express jumps ahead of the normal queue<br>
+                🎵 Standard joins the regular queue
+            </div>
+
+            <div class="urgency" id="urgencyText">
+                ⚡ VIP requests usually play within 2-3 songs
             </div>
         </div>
+
+        <div class="card">
+            <h3 class="section-title">💳 Choose Payment Method</h3>
+            <div class="payment-box">
+                💳 Card payment coming soon<br>
+                💰 Crypto / wallet payment available
+            </div>
+
+            <div class="button-group">
+                <button class="pay-btn" onclick="requestSong()">🎧 Pay & Request Song</button>
+                <button class="qr-btn" onclick="showQR()">📲 Share App QR</button>
+            </div>
+
+            <div class="qr-popup" id="qrPopup">
+                <img id="qrImage" alt="Boom Song Request QR Code">
+                <div class="small-note">Scan to open <strong>boomsongrequest.com</strong></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">✅ Your Request Status</h3>
+            <div class="status-box" id="statusBox">
+                Ready to request your next hit.
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="section-title">📊 Queue Status</h3>
+
+            <div class="queue-stats">
+                <div class="stat">
+                    <div class="stat-number" id="vipCount">0</div>
+                    <div class="stat-label">VIP</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="expressCount">0</div>
+                    <div class="stat-label">Express</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number" id="standardCount">0</div>
+                    <div class="stat-label">Standard</div>
+                </div>
+            </div>
+
+            <div class="live-queue" id="liveQueue"></div>
+        </div>
+
     </div>
 
-<script src="config.js"></script>
-<script>
-async function requestSong() {
-    const songName = document.getElementById("songInput").value.trim();
-    const tier = document.getElementById("tierSelect").value;
-    const paymentMethod = document.getElementById("paymentMethod").value;
-    const submitBtn = document.getElementById("submitBtn");
+    <script src="config.js"></script>
+    <script>
+        const APP_URL = typeof API_URL !== "undefined" ? API_URL : "https://www.boomsongrequest.com";
 
-    const messageEl = document.getElementById("message");
-    messageEl.textContent = "";
-    messageEl.className = "";
+        function highlightTier() {
+            const tier = document.getElementById("tierSelect").value;
 
-    if (!songName || songName.length < 2) {
-        messageEl.textContent = "❌ Please enter a valid song name (at least 2 characters).";
-        messageEl.className = "error";
-        return;
-    }
+            document.getElementById("tier-vip").classList.remove("selected");
+            document.getElementById("tier-express").classList.remove("selected");
+            document.getElementById("tier-standard").classList.remove("selected");
 
-    if (songName.length > 100) {
-        messageEl.textContent = "❌ Song name is too long (max 100 characters).";
-        messageEl.className = "error";
-        return;
-    }
+            document.getElementById("tier-" + tier).classList.add("selected");
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = "⏳ Processing...";
+            const urgencyText = document.getElementById("urgencyText");
 
-    const endpoint = paymentMethod === "payfast" ? "/create-payfast-payment" :
-                     paymentMethod === "usdt" ? "/create-usdt-payment" :
-                     paymentMethod === "btc" ? "/create-btc-payment" :
-                     "/create-payment";
-
-    try {
-        const response = await fetch(API_URL + endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ songName, tier })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
+            if (tier === "vip") {
+                urgencyText.innerText = "🔥 VIP is the fastest option and gets top priority in the club.";
+            } else if (tier === "express") {
+                urgencyText.innerText = "⚡ Express skips the normal queue and gets played faster.";
+            } else {
+                urgencyText.innerText = "🎵 Standard joins the regular queue at the best price.";
+            }
         }
 
-        const data = await response.json();
+        function updateStatusPreview() {
+            const songName = document.getElementById("songInput").value.trim();
+            const tier = document.getElementById("tierSelect").value;
+            const statusBox = document.getElementById("statusBox");
 
-        if (!data.paymentUrl) {
-            throw new Error("Payment service unavailable");
+            const tierText = {
+                vip: "VIP",
+                express: "Express",
+                standard: "Standard"
+            };
+
+            if (!songName) {
+                statusBox.innerText = "Ready to request your next hit.";
+                return;
+            }
+
+            statusBox.innerText = `Your request for "${songName}" is ready to be submitted as ${tierText[tier]}.`;
         }
 
-        messageEl.textContent = "✅ Redirecting to payment...";
-        messageEl.className = "success";
+        async function requestSong() {
+            const songName = document.getElementById("songInput").value.trim();
+            const tier = document.getElementById("tierSelect").value;
+            const statusBox = document.getElementById("statusBox");
 
-        setTimeout(() => {
-            window.location.href = data.paymentUrl;
-        }, 500);
+            if (!songName) {
+                statusBox.innerText = "Please enter a song name first.";
+                return;
+            }
 
-    } catch (error) {
-        console.error("Payment request error:", error);
-        messageEl.textContent = "❌ " + (error.message || "Unable to process payment");
-        messageEl.className = "error";
-        submitBtn.disabled = false;
-        submitBtn.textContent = "🎧 Pay & Request Song";
-    }
-}
+            statusBox.innerText = `Creating your ${tier.toUpperCase()} request for "${songName}"...`;
 
-async function loadRequestStatus() {
-    const statusEl = document.getElementById("requestStatus");
-    const paymentId = localStorage.getItem("lastPaymentId");
-    const lastSong = localStorage.getItem("lastSong");
-    const lastTier = localStorage.getItem("lastTier");
+            try {
+                const response = await fetch(APP_URL + "/create-payment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ songName, tier })
+                });
 
-    if (!paymentId) {
-        statusEl.textContent = "No active request. Submit a song above to start.";
-        return;
-    }
+                const data = await response.json();
 
-    try {
-        const response = await fetch(API_URL + "/queue");
-        const queue = await response.json();
-
-        const item = queue.find(i => i.paymentId === paymentId);
-
-        if (item) {
-            statusEl.innerHTML = `✅ <strong>${item.song}</strong> (${item.tier.toUpperCase()}) is in queue. <br> Position: ${queue.findIndex(i => i.paymentId === paymentId) + 1}`;
-        } else {
-            statusEl.innerHTML = `✅ Your request <strong>${lastSong || ''}</strong> has been processed. <br>Contact DJ if it hasn't played yet.`;
+                if (data.paymentUrl) {
+                    statusBox.innerText = `Redirecting you to secure payment for "${songName}"...`;
+                    window.location.href = data.paymentUrl;
+                } else {
+                    statusBox.innerText = "Could not create payment link. Please try again.";
+                }
+            } catch (error) {
+                console.error(error);
+                statusBox.innerText = "Connection error. Please try again.";
+            }
         }
-    } catch (error) {
-        console.error("Error loading request status:", error);
-        statusEl.textContent = "Unable to load request status.";
-    }
-}
 
-async function loadQueueStatus() {
-    const statsEl = document.getElementById("queueStats");
+        async function loadQueue() {
+            try {
+                const response = await fetch(APP_URL + "/queue");
+                const queue = await response.json();
 
-    try {
-        const response = await fetch(API_URL + "/queue");
-        const queue = await response.json();
+                let vip = 0;
+                let express = 0;
+                let standard = 0;
 
-        const vipCount = queue.filter(item => item.tier === 'vip').length;
-        const expressCount = queue.filter(item => item.tier === 'express').length;
-        const standardCount = queue.filter(item => item.tier === 'standard').length;
+                const liveQueue = document.getElementById("liveQueue");
+                liveQueue.innerHTML = "";
 
-        statsEl.innerHTML = `
-            <span style="color: #ffd43b;">VIP: ${vipCount} waiting</span><br>
-            <span style="color: #4dabf7;">Express: ${expressCount} waiting</span><br>
-            <span style="color: #888;">Standard: ${standardCount} waiting</span>
-        `;
-    } catch (error) {
-        console.error("Error loading queue status:", error);
-        statsEl.textContent = "Unable to load queue status.";
-    }
-}
+                queue.forEach((item, index) => {
+                    if (item.tier === "vip") vip++;
+                    if (item.tier === "express") express++;
+                    if (item.tier === "standard") standard++;
 
-// Load status on page load and refresh every 10 seconds
-setInterval(() => {
-    loadRequestStatus();
-    loadQueueStatus();
-}, 10000);
+                    if (index < 5) {
+                        const div = document.createElement("div");
+                        div.className = "queue-item";
+                        div.innerHTML = `<strong>#${index + 1}</strong> ${item.song} - ${item.tier.toUpperCase()}`;
+                        liveQueue.appendChild(div);
+                    }
+                });
 
-loadRequestStatus();
-loadQueueStatus();
+                document.getElementById("vipCount").innerText = vip;
+                document.getElementById("expressCount").innerText = express;
+                document.getElementById("standardCount").innerText = standard;
 
-setInterval(loadRequestStatus, 5000);
-loadRequestStatus();
-</script>
+                if (queue.length === 0) {
+                    liveQueue.innerHTML = '<div class="queue-item">No songs waiting right now. Be the first to take over the vibe.</div>';
+                }
+            } catch (error) {
+                console.log("Error loading queue:", error);
+            }
+        }
+
+        function showQR() {
+            const qrPopup = document.getElementById("qrPopup");
+            const qrImage = document.getElementById("qrImage");
+
+            qrImage.src = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent("https://www.boomsongrequest.com");
+            qrPopup.style.display = qrPopup.style.display === "block" ? "none" : "block";
+        }
+
+        document.getElementById("songInput").addEventListener("input", updateStatusPreview);
+
+        highlightTier();
+        updateStatusPreview();
+        loadQueue();
+        setInterval(loadQueue, 5000);
+    </script>
+</body>
+</html>

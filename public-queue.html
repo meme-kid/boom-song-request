@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="See the live BOOM song request queue, current song, and queue activity in real time.">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="canonical" href="https://www.boomsongrequest.com/public-queue.html">
+    <title>Live Queue - BOOM Song Request</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: radial-gradient(circle at top, #0a0a0a, #000);
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #ccc;
+            font-size: 1.2rem;
+        }
+
+        .queue-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .now-playing {
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: black;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
+        }
+
+        .upcoming-section {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #333;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #ffd700;
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 12px;
+            border-left: 6px solid;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .queue-item.vip {
+            border-left-color: #ffd700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+        }
+
+        .queue-item.express {
+            border-left-color: #4dabf7;
+            background: linear-gradient(135deg, rgba(77, 171, 247, 0.2), rgba(77, 171, 247, 0.1));
+        }
+
+        .queue-item.standard {
+            border-left-color: #888;
+            background: linear-gradient(135deg, rgba(136, 136, 136, 0.2), rgba(136, 136, 136, 0.1));
+        }
+
+        .queue-position {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 20px;
+            color: #fff;
+            min-width: 50px;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .song-details {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        .empty-queue {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #666;
+            padding: 50px;
+        }
+
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #ccc;
+        }
+
+        .vip-urgency {
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(255, 215, 0, 0.1));
+            border: 2px solid #ff4444;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .request-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700, #ffb700);
+            color: black;
+            padding: 15px 30px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .request-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .title { font-size: 2rem; }
+            .now-playing { font-size: 1.5rem; padding: 20px; }
+            .queue-item { font-size: 1rem; padding: 15px; }
+            .song-title { font-size: 1.1rem; }
+            .stats-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🎵 BOOM SONG REQUEST</div>
+            <div class="subtitle">Live Queue Status</div>
+        </div>
+
+        <div class="card">
+            <div class="now-playing" id="nowPlaying">
+                🎧 NOW PLAYING: [No song playing]
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section-title">📋 UPCOMING SONGS</div>
+            <div id="queueList">
+                <div class="empty-queue">Queue is empty - Request a song!</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="vip-urgency" id="vipUrgency">
+                🔥 Only <span id="vipSpotsLeft">3</span> VIP spots available this hour!
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="card">
+                <div class="stat-value" id="tonightEarnings">R0</div>
+                <div class="stat-label">Earned Tonight</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" id="totalSongs">0</div>
+                <div class="stat-label">Songs Played</div>
+            </div>
+            <div class="card">
+                <div class="stat-value" id="queueLength">0</div>
+                <div class="stat-label">In Queue</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="https://www.boomsongrequest.com/" class="request-button" id="requestSongLink">🎵 Request a Song</a>
+        </div>
+    </div>
+    </div>
+
+<script src="config.js"></script>
+<script>
+document.getElementById("requestSongLink").href = API_URL + "/";
+
+async function updateQueue() {
+    try {
+        // Fetch queue data
+        const queueResponse = await fetch(API_URL + '/queue');
+        const queueData = await queueResponse.json();
+
+        // Fetch earnings data
+        const earningsResponse = await fetch(API_URL + '/earnings');
+        const earningsData = await earningsResponse.json();
+
+        updateDisplay(queueData, earningsData);
+    } catch (error) {
+        console.error('Error updating queue:', error);
+    }
+}
+
+function updateDisplay(queue, earnings) {
+    const nowPlaying = document.getElementById('nowPlaying');
+    const queueList = document.getElementById('queueList');
+
+    if (queue.length === 0) {
+        nowPlaying.innerHTML = '🎧 NOW PLAYING: [No song playing]';
+        queueList.innerHTML = '<div class="empty-queue">Queue is empty - Request a song!</div>';
+        document.getElementById('queueLength').textContent = '0';
+        return;
+    }
+
+    // First song is "now playing"
+    const nowPlayingSong = queue[0];
+    nowPlaying.innerHTML = `🎧 NOW PLAYING: ${nowPlayingSong.song} (${nowPlayingSong.tier.toUpperCase()})`;
+
+    // Rest are upcoming
+    const upcomingSongs = queue.slice(1);
+    if (upcomingSongs.length === 0) {
+        queueList.innerHTML = '<div class="empty-queue">No upcoming songs</div>';
+    } else {
+        const queueHtml = upcomingSongs.map((song, index) => `
+            <div class="queue-item ${song.tier}">
+                <div class="queue-position">#${index + 2}</div>
+                <div class="song-info">
+                    <div class="song-title">${song.song}</div>
+                    <div class="song-details">${song.tier.toUpperCase()} • ${song.paymentMethod}</div>
+                </div>
+            </div>
+        `).join('');
+        queueList.innerHTML = queueHtml;
+    }
+
+    // Update stats
+    document.getElementById('tonightEarnings').textContent = `R${earnings.tonight || 0}`;
+    document.getElementById('totalSongs').textContent = earnings.totalSongs || 0;
+    document.getElementById('queueLength').textContent = queue.length;
+    document.getElementById('vipSpotsLeft').textContent = Math.max(0, 2 - (earnings.vipThisHour || 0));
+}
+
+// Update every 10 seconds
+setInterval(updateQueue, 10000);
+
+// Initial load
+updateQueue();
+</script>
+</body>
+</html>

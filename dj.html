@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DJ dashboard for managing the BOOM live queue and verifying crypto song requests.">
+    <meta name="theme-color" content="#111111">
     <title>DJ Dashboard</title>
     <style>
         body {
@@ -77,10 +80,10 @@
         
         <div style="text-align: left; max-width: 400px; margin: 0 auto;">
             <label>Payment ID:</label><br>
-            <input type="text" id="verifyPaymentId" placeholder="e.g., USDT-123456789" style="width: 100%; padding: 8px; margin: 5px 0;"><br>
+            <input type="text" id="verifyPaymentId" placeholder="e.g., USDT-123456789" style="width: 100%; padding: 8px; margin: 5px 0;" maxlength="80"><br>
             
             <label>Song Name:</label><br>
-            <input type="text" id="verifySongName" placeholder="Song requested" style="width: 100%; padding: 8px; margin: 5px 0;"><br>
+            <input type="text" id="verifySongName" placeholder="Song requested" style="width: 100%; padding: 8px; margin: 5px 0;" maxlength="100"><br>
             
             <label>Tier:</label><br>
             <select id="verifyTier" style="width: 100%; padding: 8px; margin: 5px 0;">

@@ -1,20 +1,20 @@
 // Frontend API configuration
-// Automatically uses the current host or falls back to localhost:4000
+// Use the current hosted origin for both local and production deployments.
+// Only fall back to the production domain when the page is opened outside a web server.
+
+const PRODUCTION_URL = "https://www.boomsongrequest.com";
 
 const getApiUrl = () => {
-  if (typeof window === 'undefined') return 'http://localhost:4000';
-  
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  const port = window.location.port ? ':' + window.location.port : '';
-  
-  // If accessed via localhost on different port, connect to port 4000
-  if (hostname === 'localhost') {
-    return protocol + '//' + hostname + ':4000';
+  if (typeof window === "undefined") return PRODUCTION_URL;
+
+  const { protocol, hostname, port } = window.location;
+  const currentOrigin = protocol + "//" + hostname + (port ? ":" + port : "");
+
+  if (protocol === "file:") {
+    return PRODUCTION_URL;
   }
-  
-  // If accessed via IP/domain, use the same origin
-  return protocol + '//' + hostname + port;
+
+  return currentOrigin;
 };
 
 const API_URL = getApiUrl();
