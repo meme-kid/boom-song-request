@@ -360,10 +360,14 @@
 
         <div class="card">
             <h3 class="section-title">💳 Choose Payment Method</h3>
-            <div class="payment-box">
-                💳 Card payment coming soon<br>
-                💰 Crypto / wallet payment available
-            </div>
+
+            <label for="paymentMethod">Payment Method</label>
+            <select id="paymentMethod">
+                <option value="usdt">💰 USDT (TRC20)</option>
+                <option value="btc">🪙 Bitcoin (BTC)</option>
+                <option value="payfast">🌍 PayFast</option>
+                <option value="yoco">💳 Card Payment</option>
+            </select>
 
             <div class="button-group">
                 <button class="pay-btn" onclick="requestSong()">🎧 Pay & Request Song</button>
@@ -408,7 +412,7 @@
 
     <script src="config.js"></script>
     <script>
-        const APP_URL = typeof API_URL !== "undefined" ? API_URL : "https://www.boomsongrequest.com";
+        const APP_URL = "https://www.boomsongrequest.com";
 
         function highlightTier() {
             const tier = document.getElementById("tierSelect").value;
@@ -452,6 +456,7 @@
         async function requestSong() {
             const songName = document.getElementById("songInput").value.trim();
             const tier = document.getElementById("tierSelect").value;
+            const paymentMethod = document.getElementById("paymentMethod").value;
             const statusBox = document.getElementById("statusBox");
 
             if (!songName) {
@@ -459,10 +464,22 @@
                 return;
             }
 
-            statusBox.innerText = `Creating your ${tier.toUpperCase()} request for "${songName}"...`;
+            let endpoint = "/create-payment";
+
+            if (paymentMethod === "usdt") {
+                endpoint = "/create-usdt-payment";
+            } else if (paymentMethod === "btc") {
+                endpoint = "/create-btc-payment";
+            } else if (paymentMethod === "payfast") {
+                endpoint = "/create-payfast-payment";
+            } else if (paymentMethod === "yoco") {
+                endpoint = "/create-payment";
+            }
+
+            statusBox.innerText = `Creating payment for "${songName}"...`;
 
             try {
-                const response = await fetch(APP_URL + "/create-payment", {
+                const response = await fetch(APP_URL + endpoint, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -471,16 +488,17 @@
                 });
 
                 const data = await response.json();
+                console.log("Payment response:", data);
 
-                if (data.paymentUrl) {
-                    statusBox.innerText = `Redirecting you to secure payment for "${songName}"...`;
+                if (response.ok && data.paymentUrl) {
+                    statusBox.innerText = `Redirecting to payment for "${songName}"...`;
                     window.location.href = data.paymentUrl;
                 } else {
-                    statusBox.innerText = "Could not create payment link. Please try again.";
+                    statusBox.innerText = data.message || "Payment route failed.";
                 }
             } catch (error) {
-                console.error(error);
-                statusBox.innerText = "Connection error. Please try again.";
+                console.error("Payment error:", error);
+                statusBox.innerText = "Network/server error while creating payment.";
             }
         }
 
