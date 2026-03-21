@@ -41,8 +41,8 @@ Add your wallet addresses to `.env`:
 
 ```bash
 # Direct Crypto Payments
-USDT_TRC20_ADDRESS=TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-BTC_ADDRESS=bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+USDT_TRC20_ADDRESS=TZ2HcoWgXVz8ETADBXzFUjXnduYa62F7FN
+BTC_ADDRESS=1HgmysQ7yTPXNby3CBj4PfUv5yff8seoqR
 ```
 
 **Security Notes:**

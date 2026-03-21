@@ -369,6 +369,11 @@
                 <option value="yoco">💳 Card Payment</option>
             </select>
 
+            <div class="payment-box" id="paymentInfoBox">
+                💰 USDT (TRC20) selected<br>
+                Wallet: <strong>TZ2HcoWgXVz8ETADBXzFUjXnduYa62F7FN</strong>
+            </div>
+
             <div class="button-group">
                 <button class="pay-btn" onclick="requestSong()">🎧 Pay & Request Song</button>
                 <button class="qr-btn" onclick="showQR()">📲 Share App QR</button>
@@ -453,6 +458,33 @@
             statusBox.innerText = `Your request for "${songName}" is ready to be submitted as ${tierText[tier]}.`;
         }
 
+        function updatePaymentInfo() {
+            const paymentMethod = document.getElementById("paymentMethod").value;
+            const paymentInfoBox = document.getElementById("paymentInfoBox");
+
+            if (paymentMethod === "usdt") {
+                paymentInfoBox.innerHTML = `
+            💰 USDT (TRC20) selected<br>
+            Wallet: <strong>TZ2HcoWgXVz8ETADBXzFUjXnduYa62F7FN</strong>
+        `;
+            } else if (paymentMethod === "btc") {
+                paymentInfoBox.innerHTML = `
+            🪙 Bitcoin (BTC) selected<br>
+            Wallet: <strong>1HgmysQ7yTPXNby3CBj4PfUv5yff8seoqR</strong>
+        `;
+            } else if (paymentMethod === "payfast") {
+                paymentInfoBox.innerHTML = `
+            🌍 PayFast selected<br>
+            You will be redirected to secure payment.
+        `;
+            } else {
+                paymentInfoBox.innerHTML = `
+            💳 Card payment selected<br>
+            You will be redirected to secure payment.
+        `;
+            }
+        }
+
         async function requestSong() {
             const songName = document.getElementById("songInput").value.trim();
             const tier = document.getElementById("tierSelect").value;
@@ -522,7 +554,7 @@
                     if (index < 5) {
                         const div = document.createElement("div");
                         div.className = "queue-item";
-                        div.innerHTML = `<strong>#${index + 1}</strong> ${item.song} - ${item.tier.toUpperCase()}`;
+                        div.innerHTML = `<strong>#${index + 1}</strong> ${item.song} — ${item.tier.toUpperCase()}`;
                         liveQueue.appendChild(div);
                     }
                 });
@@ -532,7 +564,7 @@
                 document.getElementById("standardCount").innerText = standard;
 
                 if (queue.length === 0) {
-                    liveQueue.innerHTML = '<div class="queue-item">No songs waiting right now. Be the first to take over the vibe.</div>';
+                    liveQueue.innerHTML = `<div class="queue-item">No songs waiting right now. Be the first to take over the vibe.</div>`;
                 }
             } catch (error) {
                 console.log("Error loading queue:", error);
@@ -543,14 +575,16 @@
             const qrPopup = document.getElementById("qrPopup");
             const qrImage = document.getElementById("qrImage");
 
-            qrImage.src = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent("https://www.boomsongrequest.com");
+            qrImage.src = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodeURIComponent(APP_URL);
             qrPopup.style.display = qrPopup.style.display === "block" ? "none" : "block";
         }
 
         document.getElementById("songInput").addEventListener("input", updateStatusPreview);
+        document.getElementById("paymentMethod").addEventListener("change", updatePaymentInfo);
 
         highlightTier();
         updateStatusPreview();
+        updatePaymentInfo();
         loadQueue();
         setInterval(loadQueue, 5000);
     </script>

@@ -132,8 +132,11 @@ const PAYFAST_URL = PAYFAST_MODE === "live"
     : "https://sandbox.payfast.co.za/eng/process";
 
 // Direct Crypto Wallet Addresses
-const USDT_TRC20_ADDRESS = process.env.USDT_TRC20_ADDRESS || "";
-const BTC_ADDRESS = process.env.BTC_ADDRESS || "";
+const USDT_TRC20_ADDRESS =
+    process.env.USDT_TRC20_ADDRESS || "TZ2HcoWgXVz8ETADBXzFUjXnduYa62F7FN";
+
+const BTC_ADDRESS =
+    process.env.BTC_ADDRESS || "1HgmysQ7yTPXNby3CBj4PfUv5yff8seoqR";
 
 const APP_URL = process.env.APP_URL || "https://www.boomsongrequest.com";
 
@@ -149,7 +152,7 @@ const DJ_PASSWORD = process.env.DJ_PASSWORD || "dj_default_pass";
 // Pricing tiers in ZAR cents
 const PRICING = {
     standard: 15000,   // R150
-    express: 30000,    // R250
+    express: 25000,    // R250
     vip: 50000         // R500
 };
 
@@ -271,19 +274,16 @@ async function getUSDZARRate() {
 
 async function getBTCUSDRate() {
     try {
-        console.log('Fetching BTC/USD exchange rate...');
-        const response = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
-        const rate = response.data.bitcoin.usd;
-        console.log('BTC/USD rate:', rate);
-        return 1 / rate; // USD per BTC to BTC per USD? No.
-
-        // response.data.bitcoin.usd is USD per BTC
-        // So BTC per USD = 1 / rate
-        return 1 / rate;
+        console.log("Fetching BTC/USD exchange rate...");
+        const response = await axios.get(
+            "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+        );
+        const usdPerBtc = response.data.bitcoin.usd;
+        console.log("BTC/USD rate:", usdPerBtc);
+        return 1 / usdPerBtc;
     } catch (error) {
-        console.error('Error fetching BTC/USD exchange rate:', error.message);
-        // Fallback to approximate rate (BTC around $60k)
-        return 1 / 60000; // BTC per USD
+        console.error("Error fetching BTC/USD exchange rate:", error.message);
+        return 1 / 60000;
     }
 }
 
@@ -504,17 +504,17 @@ app.get("/wallet-address", (req, res) => {
     }
 
     if (method === "usdt") {
-        if (!USDT_TRC20_ADDRESS) {
-            return res.status(500).json({ message: "USDT wallet not configured" });
-        }
-        return res.json({ walletAddress: USDT_TRC20_ADDRESS, cryptoName: "USDT (TRC20)" });
+        return res.json({
+            walletAddress: USDT_TRC20_ADDRESS,
+            cryptoName: "USDT (TRC20)"
+        });
     }
 
     if (method === "btc") {
-        if (!BTC_ADDRESS) {
-            return res.status(500).json({ message: "BTC wallet not configured" });
-        }
-        return res.json({ walletAddress: BTC_ADDRESS, cryptoName: "Bitcoin (BTC)" });
+        return res.json({
+            walletAddress: BTC_ADDRESS,
+            cryptoName: "Bitcoin (BTC)"
+        });
     }
 
     return res.status(400).json({ message: "Invalid method" });
