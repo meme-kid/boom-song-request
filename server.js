@@ -21,6 +21,51 @@ app.use((req, res, next) => {
     res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
     next();
 });
+
+function requireAdmin(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Basic ")) {
+        res.setHeader("WWW-Authenticate", 'Basic realm="Boom Song Request Admin"');
+        return res.status(401).send("Authentication required");
+    }
+
+    const base64Credentials = authHeader.split(" ")[1];
+    const credentials = Buffer.from(base64Credentials, "base64").toString("utf8");
+    const [username, password] = credentials.split(":");
+
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        return next();
+    }
+
+    res.setHeader("WWW-Authenticate", 'Basic realm="Boom Song Request Admin"');
+    return res.status(401).send("Invalid credentials");
+}
+
+app.get("/dj", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "dj.html"));
+});
+
+app.get("/dj.html", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "dj.html"));
+});
+
+app.get("/dj-display", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "dj-display.html"));
+});
+
+app.get("/dj-display.html", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "dj-display.html"));
+});
+
+app.get("/earnings", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "earnings.html"));
+});
+
+app.get("/earnings.html", requireAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, "earnings.html"));
+});
+
 app.use(express.static(path.join(__dirname)));
 
 const staticPages = {
@@ -28,10 +73,6 @@ const staticPages = {
     "/index.html": "index.html",
     "/public-queue": "public-queue.html",
     "/public-queue.html": "public-queue.html",
-    "/dj": "dj.html",
-    "/dj.html": "dj.html",
-    "/dj-display": "dj-display.html",
-    "/dj-display.html": "dj-display.html",
     "/qr": "qr.html",
     "/qr.html": "qr.html",
     "/success": "success.html",
@@ -148,6 +189,8 @@ const getBaseUrl = (req) => {
     return `${protocol}://${host}`;
 };
 const DJ_PASSWORD = process.env.DJ_PASSWORD || "dj_default_pass";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || DJ_PASSWORD;
 
 // Pricing tiers in ZAR cents
 const PRICING = {
@@ -560,7 +603,7 @@ app.post("/submit-txid", (req, res) => {
 // =======================
 // Get Pending Crypto Payments (DJ)
 // =======================
-app.get("/pending-crypto", (req, res) => {
+app.get("/pending-crypto", requireAdmin, (req, res) => {
     db.all("SELECT * FROM pending_crypto ORDER BY submitted_at DESC", [], (err, rows) => {
         if (err) {
             return res.status(500).json({ message: "Database error" });
@@ -827,7 +870,7 @@ app.get("/app-status", (req, res) => {
     });
 });
 
-app.get("/stats", (req, res) => {
+app.get("/stats", requireAdmin, (req, res) => {
     const tierPrices = {
         standard: 150,
         express: 250,
@@ -896,7 +939,7 @@ app.get("/stats", (req, res) => {
     );
 });
 
-app.get("/queue-history", (req, res) => {
+app.get("/queue-history", requireAdmin, (req, res) => {
     db.all(
         "SELECT * FROM queue ORDER BY id DESC",
         [],
