@@ -195,7 +195,7 @@
       <div class="logo">Au</div>
       <div>
         <h1>XAU/USD Signal Desk</h1>
-        <p>Live gold trading calls &amp; position manager · build 6</p>
+        <p>Live gold trading calls &amp; position manager · build 7</p>
       </div>
     </div>
     <div class="price-block">
@@ -269,6 +269,7 @@
     <div>
       <div class="panel">
         <div class="phead"><h2>Current Call</h2>
+          <span style="font-size:10px;color:var(--bull);margin-left:auto;margin-right:8px" id="savedDot"></span>
           <span style="font-size:11px;color:var(--faint)" id="sigAge"></span>
         </div>
         <div class="sig" id="sigCard"><!-- filled by JS --></div>
@@ -686,22 +687,36 @@ function renderSignal(){
   persist();
 }
 
-/* ---- Persistence (keep the call across page refreshes) ---- */
+/* ---- Persistence (keep the call + inputs across page refreshes) ---- */
+const LS = { pos:'xau_pos', hist:'xau_hist', inp:'xau_inputs' };
+function setSaved(ok){ const e=document.getElementById('savedDot'); if(e) e.textContent = ok?'● saved':''; }
 function persist(){
   try{
-    if(pos) localStorage.setItem('xau_pos', JSON.stringify(pos));
-    localStorage.setItem('xau_hist', JSON.stringify(history));
-  }catch(e){}
+    if(pos) localStorage.setItem(LS.pos, JSON.stringify(pos)); else localStorage.removeItem(LS.pos);
+    localStorage.setItem(LS.hist, JSON.stringify(history));
+    localStorage.setItem(LS.inp, JSON.stringify({
+      acct:document.getElementById('acct').value, risk:document.getElementById('risk').value }));
+    setSaved(true);
+  }catch(e){ setSaved(false); }
 }
 function restore(){
+  let had=false;
   try{
-    const h = JSON.parse(localStorage.getItem('xau_hist')||'[]');
+    const inp = JSON.parse(localStorage.getItem(LS.inp)||'null');
+    if(inp){ if(inp.acct!=null) document.getElementById('acct').value=inp.acct;
+             if(inp.risk!=null) document.getElementById('risk').value=inp.risk; }
+    const h = JSON.parse(localStorage.getItem(LS.hist)||'[]');
     if(Array.isArray(h)) history = h;
-    const p = localStorage.getItem('xau_pos');
-    if(p){ pos = JSON.parse(p); return true; }
+    const p = localStorage.getItem(LS.pos);
+    if(p){ pos = JSON.parse(p); had=true; }
   }catch(e){}
-  return false;
+  return had;
 }
+// Save whenever the user edits inputs, and right before the page is hidden/closed.
+['acct','risk'].forEach(id=>document.getElementById(id).addEventListener('change',persist));
+window.addEventListener('beforeunload', persist);
+window.addEventListener('pagehide', persist);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) persist(); });
 
 /* ---- Add-on / scale-in panel ---- */
 function renderAddon(){
@@ -911,8 +926,11 @@ document.getElementById('tvTfRow').addEventListener('click',(e)=>{
 loadTV("60");
 initChart();
 PriceFeed.start();
-if(restore()){ renderSignal(); renderHistory(); }   // keep the last call after a refresh
-else { newSignal(); }                               // first visit -> scan now
+if(restore()){                                      // keep the last call after a refresh
+  try{ renderSignal(); renderHistory(); document.getElementById('sigAge').textContent='restored from last session'; }
+  catch(e){ newSignal(); }
+} else { newSignal(); }                              // first visit -> scan now
+updateCalc();
 window.addEventListener('resize',()=>{ if(chart) chart.timeScale().fitContent(); });
 </script>
 </body>
