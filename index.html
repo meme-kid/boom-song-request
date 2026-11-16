@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>XAU/USD Live Signal Desk</title>
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0f1620; --panel:#121a26; --panel2:#17212f;
+    --line:#223044; --line2:#2c3e54;
+    --txt:#e6edf5; --muted:#8aa0b8; --faint:#5f748c;
+    --bull:#16c784; --bear:#ea3943; --neutral:#f0b429;
+    --accent:#3b82f6; --accent2:#2563eb;
+    --tp:#16c784; --sl:#ea3943; --entry:#f0b429;
+    --chip:#1c2836;
+    --shadow:0 4px 24px rgba(0,0,0,.45);
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 600px at 70% -10%, #121c2b 0%, var(--bg) 55%);
+    color:var(--txt);
+    font-family:'Inter',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .wrap{max-width:1500px;margin:0 auto;padding:16px 18px 60px}
+
+  /* Header */
+  header.top{
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    padding:12px 16px;margin-bottom:16px;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  }
+  .brand{display:flex;align-items:center;gap:12px;min-width:200px}
+  .logo{
+    width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#f0b429,#b8860b);color:#1a1200;font-weight:800;font-size:18px;
+    box-shadow:0 0 0 1px rgba(240,180,41,.3),0 6px 18px rgba(240,180,41,.25);
+  }
+  .brand h1{font-size:16px;margin:0;letter-spacing:.3px}
+  .brand p{margin:0;font-size:11px;color:var(--muted)}
+  .price-block{display:flex;align-items:baseline;gap:10px;margin-left:6px}
+  .price-block .sym{font-size:12px;color:var(--muted);font-weight:600}
+  .price-block .px{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+  .price-block .chg{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+  .spacer{flex:1}
+  .feed{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 0 3px rgba(22,199,132,.18);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}
+  .clock{font-variant-numeric:tabular-nums;font-size:12px;color:var(--faint)}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:1fr 390px;gap:16px}
+  @media(max-width:1080px){.grid{grid-template-columns:1fr}}
+
+  .panel{
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);
+  }
+  .panel .phead{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 14px;border-bottom:1px solid var(--line);
+  }
+  .phead h2{font-size:13px;margin:0;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+  /* Chart */
+  .tf-row{display:flex;gap:6px}
+  .tf{
+    background:var(--chip);border:1px solid var(--line2);color:var(--muted);
+    padding:5px 11px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .tf:hover{color:var(--txt);border-color:var(--accent)}
+  .tf.active{background:var(--accent2);border-color:var(--accent);color:#fff}
+  #tvchart{height:460px;width:100%}
+  @media(max-width:600px){#tvchart{height:360px}}
+
+  /* Levels rail */
+  .levels-rail{padding:14px}
+  .rail{position:relative;height:150px;border-radius:12px;background:
+      linear-gradient(90deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+      border:1px solid var(--line);overflow:hidden}
+  .rail .zone{position:absolute;left:0;right:0;height:1px}
+  .rail .zlabel{position:absolute;right:8px;transform:translateY(-50%);font-size:11px;font-weight:700;
+     font-variant-numeric:tabular-nums;padding:1px 6px;border-radius:6px;background:rgba(0,0,0,.35)}
+  .rail .pxline{position:absolute;left:0;right:0;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .rail .pxtag{position:absolute;left:8px;transform:translateY(-50%);font-size:11px;font-weight:800;
+     background:var(--accent2);color:#fff;padding:1px 7px;border-radius:6px;font-variant-numeric:tabular-nums}
+
+  /* Signal card */
+  .sig{padding:14px}
+  .bias{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;margin-bottom:12px;
+    font-weight:800;font-size:15px;letter-spacing:.4px;
+  }
+  .bias.bear{background:rgba(234,57,67,.12);color:#ff6b74;border:1px solid rgba(234,57,67,.35)}
+  .bias.bull{background:rgba(22,199,132,.12);color:#2fe6a5;border:1px solid rgba(22,199,132,.35)}
+  .bias.neutral{background:rgba(240,180,41,.12);color:#ffcf5c;border:1px solid rgba(240,180,41,.35)}
+  .bias .arrow{font-size:18px}
+  .status-badge{margin-left:auto;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+     padding:4px 9px;border-radius:20px;background:var(--chip);border:1px solid var(--line2);color:var(--muted)}
+  .status-badge.s1{color:#ffcf5c;border-color:rgba(240,180,41,.4)}
+  .status-badge.s2{color:#5fb0ff;border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.08)}
+  .status-badge.s3{color:#2fe6a5;border-color:rgba(22,199,132,.4);background:rgba(22,199,132,.08)}
+
+  .entry-line{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .pill{font-size:11px;font-weight:800;padding:4px 9px;border-radius:7px;background:var(--chip);border:1px solid var(--line2)}
+  .entry-zone{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+
+  .levels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .lv{padding:9px 11px;border-radius:11px;background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden}
+  .lv .k{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;display:flex;align-items:center;gap:6px}
+  .lv .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+  .lv.sl{border-color:rgba(234,57,67,.3)} .lv.sl .v{color:#ff6b74}
+  .lv.tp .v{color:#2fe6a5}
+  .lv.entry{border-color:rgba(240,180,41,.3)} .lv.entry .v{color:#ffcf5c}
+  .lv .tick{position:absolute;top:8px;right:9px;font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px;display:none}
+  .lv.hit .tick{display:inline-block;background:rgba(22,199,132,.18);color:#2fe6a5}
+  .lv.hit{opacity:.72}
+  .lv.swatch-left{padding-left:15px}
+  .lv.swatch-left::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .lv.sl::before{background:var(--sl)} .lv.tp::before{background:var(--tp)} .lv.entry::before{background:var(--entry)}
+
+  .reason{font-size:12.5px;line-height:1.55;color:var(--muted);background:var(--panel);
+     border:1px dashed var(--line2);border-radius:11px;padding:10px 12px;margin-bottom:6px}
+  .reason b{color:var(--txt)}
+
+  .rr{display:flex;gap:14px;margin-top:10px;font-size:11.5px;color:var(--faint)}
+  .rr b{color:var(--txt);font-variant-numeric:tabular-nums}
+
+  /* Calculator */
+  .calc{padding:14px}
+  .field{margin-bottom:11px}
+  .field label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+  .field .inp{display:flex;align-items:center;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .field .inp span{padding:0 10px;color:var(--faint);font-size:13px;font-weight:700}
+  .field input{flex:1;background:transparent;border:0;outline:0;color:var(--txt);font-size:15px;font-weight:700;
+     padding:10px 10px 10px 0;font-variant-numeric:tabular-nums;width:100%}
+  .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .calc-out{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .co{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px 11px}
+  .co .k{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase}
+  .co .v{font-size:19px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+  .co.big{grid-column:1/-1;background:linear-gradient(135deg,rgba(59,130,246,.14),rgba(37,99,235,.05));border-color:rgba(59,130,246,.3)}
+  .co .sub{font-size:10.5px;color:var(--faint);margin-top:3px}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;
+     padding:11px;border-radius:11px;border:1px solid var(--line2);background:var(--chip);
+     color:var(--txt);font-weight:800;font-size:13px;cursor:pointer;transition:.15s;margin-top:10px}
+  .btn:hover{border-color:var(--accent);background:var(--panel2)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.warn{background:linear-gradient(135deg,#f0b429,#c98a06);border-color:#f0b429;color:#201700}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Add-on panel */
+  .addon{padding:14px;border-top:1px solid var(--line)}
+  .addon.hidden{display:none}
+  .addon h3{font-size:12px;margin:0 0 8px;color:#5fb0ff;letter-spacing:.3px}
+  .addon.waiting h3{color:#ffcf5c}
+  .mini-note{font-size:11.5px;color:var(--muted);line-height:1.5}
+
+  /* History */
+  .hist{margin-top:16px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;background:var(--panel2)}
+  td .tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px}
+  .tag.bull{background:rgba(22,199,132,.14);color:#2fe6a5}
+  .tag.bear{background:rgba(234,57,67,.14);color:#ff6b74}
+  .tag.active{background:rgba(59,130,246,.14);color:#5fb0ff}
+  .tag.tp3{background:rgba(22,199,132,.2);color:#2fe6a5}
+  .tag.tp2,.tag.tp1{background:rgba(22,199,132,.12);color:#8be0c0}
+  .tag.sl{background:rgba(234,57,67,.16);color:#ff8b92}
+  .secured-bar{height:6px;border-radius:4px;background:var(--line);overflow:hidden;min-width:70px}
+  .secured-bar i{display:block;height:100%;background:linear-gradient(90deg,#16c784,#2fe6a5)}
+  tr.row-active{background:rgba(59,130,246,.05)}
+
+  .foot{margin-top:18px;font-size:11px;color:var(--faint);line-height:1.6;text-align:center}
+  .flash{animation:flash .5s}
+  @keyframes flash{0%{background:rgba(59,130,246,.18)}100%{background:transparent}}
+  .up{color:var(--bull)} .down{color:var(--bear)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">Au</div>
+      <div>
+        <h1>XAU/USD Signal Desk</h1>
+        <p>Live gold trading calls &amp; position manager</p>
+      </div>
+    </div>
+    <div class="price-block">
+      <span class="sym">XAUUSD</span>
+      <span class="px" id="livePrice">—</span>
+      <span class="chg" id="liveChg">—</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="feed">
+      <span class="dot" id="feedDot"></span>
+      <span id="feedLabel">Sim feed · demo</span>
+      <span class="clock" id="clock"></span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: chart + levels -->
+    <div>
+      <div class="panel">
+        <div class="phead">
+          <h2>XAU/USD · TradingView (live)</h2>
+          <div class="tf-row" id="tvTfRow">
+            <button class="tf" data-int="15">M15</button>
+            <button class="tf active" data-int="60">H1</button>
+            <button class="tf" data-int="240">H4</button>
+            <button class="tf" data-int="D">1D</button>
+          </div>
+        </div>
+        <div id="tvwidget" style="height:460px;width:100%"></div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="phead">
+          <h2>Trade Levels · Entry / SL / TP</h2>
+          <div class="tf-row" id="tfRow">
+            <button class="tf" data-tf="M15">M15</button>
+            <button class="tf active" data-tf="H1">H1</button>
+            <button class="tf" data-tf="H4">H4</button>
+            <button class="tf" data-tf="D1">1D</button>
+          </div>
+        </div>
+        <div id="tvchart"></div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="phead"><h2>Trade Map · Levels vs Price</h2>
+          <span style="font-size:11px;color:var(--faint)">live position relative to levels</span>
+        </div>
+        <div class="levels-rail">
+          <div class="rail" id="rail"></div>
+        </div>
+      </div>
+
+      <!-- History (desktop sits under chart) -->
+      <div class="panel hist" id="histPanelDesk">
+        <div class="phead"><h2>Signal History</h2>
+          <span style="font-size:11px;color:var(--faint)" id="histStat"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="histTable">
+            <thead><tr>
+              <th>Time</th><th>Bias</th><th>Entry</th><th>Result</th><th>Secured</th><th>R</th>
+            </tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: signal + calculator -->
+    <div>
+      <div class="panel">
+        <div class="phead"><h2>Current Call</h2>
+          <span style="font-size:11px;color:var(--faint)" id="sigAge"></span>
+        </div>
+        <div class="sig" id="sigCard"><!-- filled by JS --></div>
+
+        <div class="addon hidden" id="addonPanel">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <div class="phead"><h2>Risk &amp; Lot Calculator</h2></div>
+        <div class="calc">
+          <div class="field">
+            <label>Account Balance</label>
+            <div class="inp"><span>$</span><input id="acct" type="number" value="10000" min="0" step="100"></div>
+          </div>
+          <div class="field">
+            <label>Risk per Trade</label>
+            <div class="inp"><input id="risk" type="number" value="1" min="0" step="0.25"><span>%</span></div>
+          </div>
+          <div class="calc-out">
+            <div class="co"><div class="k">Risk Amount</div><div class="v" id="outRiskUsd">—</div></div>
+            <div class="co"><div class="k">SL Distance</div><div class="v" id="outSlDist">—</div><div class="sub">$ to stop</div></div>
+            <div class="co big"><div class="k">Suggested Lot Size</div><div class="v" id="outLots">—</div>
+              <div class="sub" id="outLotNote">100 oz / lot · $1 move = $100/lot</div></div>
+          </div>
+          <button class="btn" id="applyLot">Apply lot size to signal</button>
+        </div>
+      </div>
+
+      <!-- Demo controls -->
+      <div class="panel" style="margin-top:16px">
+        <div class="phead"><h2>Demo Controls</h2>
+          <span style="font-size:11px;color:var(--faint)">drive the state machine</span>
+        </div>
+        <div class="calc">
+          <button class="btn primary" id="newSig">Generate new signal</button>
+          <button class="btn warn" id="forceTp1">Force price → TP1 (demo)</button>
+          <button class="btn" id="forceRev">Trigger reversal / add-on (demo)</button>
+          <p class="mini-note" style="margin:10px 2px 0">
+            The price feed is a simulated random-walk seeded near the sample zone so the
+            TP1 → breakeven → scale-in flow is visible without a broker connection.
+            Swap <code>PriceFeed</code> and <code>SignalEngine</code> for a live API or rules/AI engine — both are isolated modules.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Educational / demo tool. Sample signals and a simulated price feed — not financial advice and not a live brokerage.
+    Position-management and signal generation are modular (<code>SignalEngine</code>, <code>PositionManager</code>, <code>PriceFeed</code>) for a real data source or AI engine.
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.3/lightweight-charts.standalone.production.js"></script>
+<script>
+/* ============================================================
+   CONFIG
+============================================================ */
+const CONFIG = {
+  symbol: "OANDA:XAUUSD",
+  contractSize: 100,     // oz per 1.0 lot -> $1 price move = $100 per lot
+  minLot: 0.01,
+  lotStep: 0.01,
+};
+
+/* ============================================================
+   SIGNAL ENGINE  (modular — replace generate() with AI/rules)
+   Produces a signal object the rest of the app consumes.
+============================================================ */
+const SignalEngine = (() => {
+  const reasons = {
+    Bearish: [
+      "Price rejected the {hi} supply zone on H1 with a bearish engulfing close; momentum rolling over into prior demand.",
+      "Lower-high printed under {hi} after a liquidity sweep; H4 structure stays bearish while below the zone.",
+      "Rejection from {hi} with RSI bearish divergence on H1 — selling the retrace back into premium."
+    ],
+    Bullish: [
+      "Bullish reaction off the {lo} demand block with a strong H1 close; structure flips to higher-highs.",
+      "Liquidity grabbed below {lo} then reclaimed — buying the pullback into the discount zone.",
+      "H4 trend up and price holding above {lo}; RSI bullish divergence supports continuation to supply."
+    ],
+    Neutral: [
+      "Price balancing between {lo} and {hi}; waiting for a clean break and retest before committing."
+    ]
+  };
+
+  function round(n){ return Math.round(n*100)/100; }
+
+  // Build a realistic signal around a reference price.
+  function generate(ref){
+    const bias = Math.random() < 0.6 ? "Bearish" : (Math.random()<0.7 ? "Bullish" : "Neutral");
+    ref = ref || 3922;
+    let s;
+    if(bias === "Bearish"){
+      const zHi = round(ref + 6 + Math.random()*6);
+      const zLo = round(zHi - (10 + Math.random()*8));
+      const entry = round((zHi+zLo)/2);
+      const sl  = round(zHi + 30 + Math.random()*20);
+      const tp1 = round(entry - 45 - Math.random()*10);
+      const tp2 = round(tp1 - 18 - Math.random()*8);
+      const tp3 = round(tp2 - 25 - Math.random()*10);
+      s = { bias, dir:-1, entryType:"Sell Limit", zoneLo:zLo, zoneHi:zHi, entry, sl, tp1, tp2, tp3 };
+    } else if(bias === "Bullish"){
+      const zLo = round(ref - 6 - Math.random()*6);
+      const zHi = round(zLo + (10 + Math.random()*8));
+      const entry = round((zHi+zLo)/2);
+      const sl  = round(zLo - 30 - Math.random()*20);
+      const tp1 = round(entry + 45 + Math.random()*10);
+      const tp2 = round(tp1 + 18 + Math.random()*8);
+      const tp3 = round(tp2 + 25 + Math.random()*10);
+      s = { bias, dir:1, entryType:"Buy Limit", zoneLo:zLo, zoneHi:zHi, entry, sl, tp1, tp2, tp3 };
+    } else {
+      const zLo = round(ref - 8), zHi = round(ref + 8);
+      s = { bias, dir:0, entryType:"Market", zoneLo:zLo, zoneHi:zHi,
+            entry:round(ref), sl:round(ref-40), tp1:round(ref+35), tp2:round(ref+55), tp3:round(ref+80) };
+    }
+    const tmpl = reasons[bias][Math.floor(Math.random()*reasons[bias].length)];
+    s.reason = tmpl.replace("{hi}", s.zoneHi).replace("{lo}", s.zoneLo);
+    s.id = "SIG-"+Math.random().toString(36).slice(2,7).toUpperCase();
+    s.created = Date.now();
+    s.lot = null;
+    return s;
+  }
+  return { generate };
+})();
+
+/* ============================================================
+   POSITION MANAGER  (state machine)
+   States: INITIAL -> TP1_SECURED -> SCALED_IN  (or STOPPED / closed)
+============================================================ */
+const PositionManager = (() => {
+  const S = { INITIAL:"INITIAL", TP1:"TP1_SECURED", SCALED:"SCALED_IN", STOPPED:"STOPPED", DONE:"DONE" };
+
+  function create(sig){
+    return {
+      sig,
+      state: S.INITIAL,
+      slWorking: sig.sl,          // current working stop (moves to BE after TP1)
+      hits: {tp1:false,tp2:false,tp3:false},
+      securedPct: 0,
+      addSuggested: false,
+      addEntry: null,
+      result: "Active",
+      closed:false,
+    };
+  }
+
+  // Feed a price tick; mutate position; return list of events.
+  function onTick(pos, px){
+    const ev = [];
+    if(pos.closed) return ev;
+    const s = pos.sig, d = s.dir;
+    if(d===0) return ev; // neutral: no auto-management in demo
+
+    const crossed = (lvl)=> d>0 ? px>=lvl : px<=lvl;
+    const stopped = (lvl)=> d>0 ? px<=lvl : px>=lvl;
+
+    // Stop loss
+    if(stopped(pos.slWorking)){
+      if(pos.state===S.INITIAL){ pos.result="Stopped"; ev.push("STOP_LOSS"); }
+      else { pos.result = pos.securedPct>0 ? ("Closed +"+pos.securedPct+"% secured") : "BE"; ev.push("STOP_BE"); }
+      pos.state=S.STOPPED; pos.closed=true; return ev;
+    }
+    // TP1
+    if(!pos.hits.tp1 && crossed(s.tp1)){
+      pos.hits.tp1=true; pos.securedPct=40;
+      pos.slWorking = s.entry; // move to breakeven
+      pos.state = S.TP1;
+      pos.result = "TP1 hit";
+      ev.push("TP1");
+    }
+    // TP2
+    if(pos.hits.tp1 && !pos.hits.tp2 && crossed(s.tp2)){
+      pos.hits.tp2=true; pos.securedPct=70; pos.result="TP2 hit"; ev.push("TP2");
+    }
+    // TP3
+    if(pos.hits.tp2 && !pos.hits.tp3 && crossed(s.tp3)){
+      pos.hits.tp3=true; pos.securedPct=100; pos.result="TP3 hit";
+      pos.state=S.DONE; pos.closed=true; ev.push("TP3");
+    }
+    return ev;
+  }
+
+  // Reversal detection stub (replace with real RSI-divergence / rejection logic).
+  // In demo: after TP1, a pullback of >=50% from tp1 back toward entry arms an add-on.
+  function checkReversal(pos, px){
+    if(pos.state!==S.TP1 || pos.addSuggested) return false;
+    const s=pos.sig;
+    const prog = s.dir>0 ? (px - s.entry)/(s.tp1 - s.entry) : (s.entry - px)/(s.entry - s.tp1);
+    if(prog <= 0.5){           // price pulled back halfway -> "reversal into zone"
+      pos.addSuggested = true;
+      pos.addEntry = Math.round(px*100)/100;
+      return true;
+    }
+    return false;
+  }
+
+  function confirmAdd(pos){
+    if(!pos.addSuggested) return;
+    pos.state = S.SCALED;
+  }
+
+  return { S, create, onTick, checkReversal, confirmAdd };
+})();
+
+/* ============================================================
+   PRICE FEED (simulated — swap for websocket/REST)
+============================================================ */
+const PriceFeed = (() => {
+  let px = 3922, prevClose = 3922, subs=[], timer=null, bias=0;
+  function start(seed){
+    px = seed || 3922; prevClose = px;
+    if(timer) clearInterval(timer);
+    timer = setInterval(()=>{
+      const drift = bias*0.25;
+      px += (Math.random()-0.5)*1.6 + drift;
+      px = Math.round(px*100)/100;
+      subs.forEach(f=>f(px));
+    }, 1200);
+  }
+  function nudge(target, speed){ // ease price toward a target over ticks (demo)
+    const iv = setInterval(()=>{
+      const diff = target - px;
+      if(Math.abs(diff) < 0.6){ clearInterval(iv); }
+      px += diff*(speed||0.18) + (Math.random()-0.5)*0.4;
+      px = Math.round(px*100)/100;
+      subs.forEach(f=>f(px));
+    }, 180);
+  }
+  return {
+    start,
+    get:()=>px,
+    setBias:(b)=>bias=b,
+    prevClose:()=>prevClose,
+    nudge,
+    subscribe:(f)=>subs.push(f)
+  };
+})();
+
+/* ============================================================
+   APP STATE + RENDER
+============================================================ */
+let pos = null;
+let history = [];
+
+function fmt(n){ return (Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+/* ---- Candlestick chart (Lightweight Charts) + live level lines ----
+   TradingView real-time widget is blocked by the artifact viewer's security
+   policy. When you host this yourself (Next.js/React), drop the TradingView
+   Advanced Chart widget into #tvchart instead and feed it CONFIG.symbol. Here
+   we render candles from the (sim) feed and plot every level as a price line. */
+const TF = { M15:{sec:900,label:"M15"}, H1:{sec:3600,label:"H1"}, H4:{sec:14400,label:"H4"}, D1:{sec:86400,label:"1D"} };
+let curTF = "H1";
+let chart, candleSeries, priceLines = [], candles = [], curCandle = null;
+
+function seedCandles(tf, lastClose){
+  const n = 140, step = TF[tf].sec;
+  let t = Math.floor(Date.now()/1000); t = t - (t % step) - n*step;
+  let px = lastClose - (Math.random()*40-20);
+  const out=[];
+  for(let i=0;i<n;i++){
+    const o=px;
+    const vol = TF[tf].sec/3600; // bigger candles on higher TF
+    const c=o + (Math.random()-0.5)*2.2*Math.sqrt(vol+1);
+    const hi=Math.max(o,c)+Math.random()*1.4*Math.sqrt(vol+1);
+    const lo=Math.min(o,c)-Math.random()*1.4*Math.sqrt(vol+1);
+    out.push({time:t, open:r2(o), high:r2(hi), low:r2(lo), close:r2(c)});
+    px=c; t+=step;
+  }
+  // pull final close toward the live price
+  out[out.length-1].close = r2(lastClose);
+  return out;
+}
+function r2(n){return Math.round(n*100)/100;}
+
+function initChart(){
+  const el=document.getElementById('tvchart'); el.innerHTML="";
+  chart = LightweightCharts.createChart(el, {
+    layout:{ background:{color:'transparent'}, textColor:'#8aa0b8', fontFamily:'Inter,system-ui,sans-serif' },
+    grid:{ vertLines:{color:'rgba(34,48,68,.4)'}, horzLines:{color:'rgba(34,48,68,.4)'} },
+    rightPriceScale:{ borderColor:'#223044' },
+    timeScale:{ borderColor:'#223044', timeVisible:true, secondsVisible:false },
+    crosshair:{ mode:LightweightCharts.CrosshairMode.Normal },
+    autoSize:true,
+  });
+  candleSeries = chart.addCandlestickSeries({
+    upColor:'#16c784', downColor:'#ea3943', wickUpColor:'#16c784', wickDownColor:'#ea3943',
+    borderVisible:false,
+  });
+  buildCandles();
+}
+function buildCandles(){
+  candles = seedCandles(curTF, PriceFeed.get());
+  candleSeries.setData(candles);
+  curCandle = {...candles[candles.length-1]};
+  chart.timeScale().fitContent();
+  drawLevelLines();
+}
+function drawLevelLines(){
+  priceLines.forEach(l=>candleSeries.removePriceLine(l)); priceLines=[];
+  if(!pos) return; const s=pos.sig;
+  const add=(price,color,title,style)=>priceLines.push(candleSeries.createPriceLine({
+    price, color, lineWidth:2, lineStyle:style??LightweightCharts.LineStyle.Solid,
+    axisLabelVisible:true, title }));
+  add(pos.slWorking,'#ea3943', pos.slWorking===s.entry?'SL·BE':'SL');
+  add(s.entry,'#f0b429','ENTRY', LightweightCharts.LineStyle.Dashed);
+  add(s.tp1, pos.hits.tp1?'#5f748c':'#16c784','TP1');
+  add(s.tp2, pos.hits.tp2?'#5f748c':'#16c784','TP2');
+  add(s.tp3, pos.hits.tp3?'#5f748c':'#16c784','TP3');
+  if(pos.addSuggested && pos.addEntry) add(pos.addEntry,'#5fb0ff','ADD', LightweightCharts.LineStyle.Dotted);
+}
+function pushPriceToCandle(px){
+  if(!curCandle) return;
+  const step=TF[curTF].sec, now=Math.floor(Date.now()/1000), slot=now-(now%step);
+  if(slot>curCandle.time){
+    curCandle={time:slot, open:px, high:px, low:px, close:px};
+    candles.push(curCandle);
+    if(candles.length>400) candles.shift();
+  } else {
+    curCandle.high=Math.max(curCandle.high,px);
+    curCandle.low=Math.min(curCandle.low,px);
+    curCandle.close=px;
+  }
+  candleSeries.update(curCandle);
+}
+document.getElementById('tfRow').addEventListener('click',(e)=>{
+  const b=e.target.closest('.tf'); if(!b) return;
+  document.querySelectorAll('.tf').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); curTF=b.dataset.tf; buildCandles();
+});
+function loadChart(){ initChart(); } // boot alias
+
+/* ---- Signal card ---- */
+function statusMeta(state){
+  const M = PositionManager.S;
+  switch(state){
+    case M.INITIAL: return {txt:"Active · Waiting for TP1", cls:"s1"};
+    case M.TP1:     return {txt:"TP1 Secured · Waiting for Add", cls:"s2"};
+    case M.SCALED:  return {txt:"Scaled In", cls:"s3"};
+    case M.STOPPED: return {txt:"Closed", cls:""};
+    case M.DONE:    return {txt:"Complete · TP3", cls:"s3"};
+    default:        return {txt:state, cls:""};
+  }
+}
+function renderSignal(){
+  if(!pos){return;}
+  const s = pos.sig;
+  const biasCls = s.dir<0?"bear":s.dir>0?"bull":"neutral";
+  const arrow = s.dir<0?"▼":s.dir>0?"▲":"◆";
+  const sm = statusMeta(pos.state);
+  const zone = (s.dir===0) ? fmt(s.entry) : (fmt(s.zoneLo)+"–"+fmt(s.zoneHi));
+  const lotTxt = s.lot ? s.lot.toFixed(2) : "—";
+
+  const lv = (cls,k,v,hit)=>`<div class="lv ${cls} swatch-left ${hit?'hit':''}">
+      <div class="tick">HIT</div><div class="k">${k}</div><div class="v">${v}</div></div>`;
+
+  // R multiple to TP1
+  const risk = Math.abs(s.entry - s.sl);
+  const rewardTp1 = Math.abs(s.tp1 - s.entry);
+  const rr = risk? (rewardTp1/risk).toFixed(2):"—";
+
+  document.getElementById('sigCard').innerHTML = `
+    <div class="bias ${biasCls}">
+      <span class="arrow">${arrow}</span> ${s.bias.toUpperCase()}
+      <span class="status-badge ${sm.cls}">${sm.txt}</span>
+    </div>
+    <div class="entry-line">
+      <span class="pill">${s.entryType}</span>
+      <span class="entry-zone">${zone}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--faint)">${s.id}</span>
+    </div>
+    <div class="levels">
+      ${lv('entry','Entry', fmt(s.entry))}
+      ${lv('sl','Stop Loss', fmt(pos.slWorking) + (pos.state!=='INITIAL'&&pos.slWorking===s.entry?' · BE':''))}
+      ${lv('tp','TP1', fmt(s.tp1), pos.hits.tp1)}
+      ${lv('tp','TP2', fmt(s.tp2), pos.hits.tp2)}
+      ${lv('tp','TP3', fmt(s.tp3), pos.hits.tp3)}
+      <div class="lv entry swatch-left"><div class="k">Lot Size</div><div class="v" style="color:var(--txt)">${lotTxt}</div></div>
+    </div>
+    <div class="reason"><b>Why:</b> ${s.reason}</div>
+    <div class="rr">
+      <span>R:R to TP1 <b>${rr}</b></span>
+      <span>Risk/leg <b>${risk.toFixed(2)}</b> pts</span>
+      <span>Secured <b>${pos.securedPct}%</b></span>
+    </div>`;
+
+  renderAddon();
+  renderRail();
+  if(chart) drawLevelLines();
+  updateCalc(); // keep lot output in sync with current SL distance
+}
+
+/* ---- Add-on / scale-in panel ---- */
+function renderAddon(){
+  const el = document.getElementById('addonPanel');
+  const M = PositionManager.S;
+  if(pos.state===M.TP1 && pos.addSuggested){
+    el.className="addon";
+    el.innerHTML = `<h3>⤴ Reversal detected · Add-on setup</h3>
+      <div class="levels" style="margin-bottom:10px">
+        <div class="lv entry swatch-left"><div class="k">Add Entry</div><div class="v" style="color:#ffcf5c">${fmt(pos.addEntry)}</div></div>
+        <div class="lv sl swatch-left"><div class="k">Add Stop</div><div class="v">${fmt(pos.sig.dir>0?pos.addEntry-25:pos.addEntry+25)}</div></div>
+      </div>
+      <p class="mini-note">Pullback tagged the discount/premium zone with a rejection signal. Scaling in keeps original runners toward TP2/TP3; combined risk recalculated below.</p>
+      <button class="btn primary" id="confirmAdd">Confirm scale-in</button>`;
+    document.getElementById('confirmAdd').onclick=()=>{ PositionManager.confirmAdd(pos); flashPrice(); renderSignal(); };
+  } else if(pos.state===M.TP1 && !pos.addSuggested){
+    el.className="addon waiting";
+    el.innerHTML = `<h3>⏳ TP1 secured · waiting for reversal</h3>
+      <p class="mini-note">Stop moved to breakeven. Monitoring for a pullback into the zone with a rejection candle / RSI divergence before suggesting an add-on.</p>`;
+  } else if(pos.state===M.SCALED){
+    el.className="addon";
+    el.innerHTML = `<h3>✓ Scaled in</h3>
+      <p class="mini-note">Added at ${fmt(pos.addEntry)}. Original + added legs running toward TP2 (${fmt(pos.sig.tp2)}) / TP3 (${fmt(pos.sig.tp3)}). Manage both to breakeven on next structure shift.</p>`;
+  } else {
+    el.className="addon hidden"; el.innerHTML="";
+  }
+}
+
+/* ---- Levels rail (price vs levels) ---- */
+function renderRail(){
+  const rail = document.getElementById('rail');
+  const s=pos.sig, px=PriceFeed.get();
+  const vals=[s.sl,s.entry,s.tp1,s.tp2,s.tp3,px];
+  let hi=Math.max(...vals), lo=Math.min(...vals);
+  const pad=(hi-lo)*0.12||1; hi+=pad; lo-=pad;
+  const Y=(v)=> (1-(v-lo)/(hi-lo))*100;
+  const row=(v,color,label)=>`
+    <div class="zone" style="top:${Y(v)}%;background:${color};opacity:.55"></div>
+    <div class="zlabel" style="top:${Y(v)}%;color:${color}">${label} ${fmt(v)}</div>`;
+  rail.innerHTML =
+    row(s.tp3,'var(--tp)','TP3')+row(s.tp2,'var(--tp)','TP2')+row(s.tp1,'var(--tp)','TP1')+
+    row(s.entry,'var(--entry)','ENTRY')+row(pos.slWorking,'var(--sl)','SL')+
+    `<div class="pxline" style="top:${Y(px)}%"></div>
+     <div class="pxtag" style="top:${Y(px)}%">${fmt(px)}</div>`;
+}
+
+/* ---- Risk & lot calculator ---- */
+function calcLots(){
+  const acct=parseFloat(document.getElementById('acct').value)||0;
+  const riskPct=parseFloat(document.getElementById('risk').value)||0;
+  const riskUsd = acct*(riskPct/100);
+  const slDist = pos ? Math.abs(pos.sig.entry - pos.sig.sl) : 0;
+  let lots = slDist>0 ? riskUsd/(slDist*CONFIG.contractSize) : 0;
+  lots = Math.max(0, Math.floor(lots/CONFIG.lotStep)*CONFIG.lotStep);
+  return {acct,riskPct,riskUsd,slDist,lots};
+}
+function updateCalc(){
+  const c=calcLots();
+  document.getElementById('outRiskUsd').textContent = "$"+c.riskUsd.toLocaleString('en-US',{maximumFractionDigits:2});
+  document.getElementById('outSlDist').textContent = c.slDist?("$"+fmt(c.slDist)):"—";
+  document.getElementById('outLots').textContent = c.lots?c.lots.toFixed(2):"—";
+  document.getElementById('outLotNote').textContent =
+    `${CONFIG.contractSize} oz/lot · total risk ≈ $${(c.lots*c.slDist*CONFIG.contractSize).toFixed(2)}`;
+}
+['acct','risk'].forEach(id=>document.getElementById(id).addEventListener('input',updateCalc));
+document.getElementById('applyLot').onclick=()=>{
+  if(!pos) return; pos.sig.lot = calcLots().lots; renderSignal();
+};
+
+/* ---- History ---- */
+function pushHistory(p){
+  const s=p.sig;
+  let resCls = p.result.includes('TP3')?'tp3':p.result.includes('TP2')?'tp2':
+    p.result.includes('TP1')||p.result.includes('secured')?'tp1':
+    p.result.includes('Stopped')?'sl':p.result.includes('BE')?'tp1':'active';
+  history.unshift({
+    time:new Date(s.created).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),
+    bias:s.bias, dir:s.dir, entry:(s.dir===0?fmt(s.entry):fmt(s.zoneLo)+'–'+fmt(s.zoneHi)),
+    result:p.result, resCls, secured:p.securedPct
+  });
+  renderHistory();
+}
+function renderHistory(){
+  const body=document.getElementById('histBody');
+  const rows=[];
+  // active row first
+  if(pos && !pos.closed){
+    const s=pos.sig;
+    rows.push(`<tr class="row-active">
+      <td>${new Date(s.created).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</td>
+      <td><span class="tag ${s.dir<0?'bear':s.dir>0?'bull':'active'}">${s.bias}</span></td>
+      <td>${s.dir===0?fmt(s.entry):fmt(s.zoneLo)+'–'+fmt(s.zoneHi)}</td>
+      <td><span class="tag active">${pos.result}</span></td>
+      <td><div class="secured-bar"><i style="width:${pos.securedPct}%"></i></div></td>
+      <td>${pos.securedPct}%</td></tr>`);
+  }
+  history.forEach(h=>{
+    rows.push(`<tr>
+      <td>${h.time}</td>
+      <td><span class="tag ${h.dir<0?'bear':h.dir>0?'bull':'active'}">${h.bias}</span></td>
+      <td>${h.entry}</td>
+      <td><span class="tag ${h.resCls}">${h.result}</span></td>
+      <td><div class="secured-bar"><i style="width:${h.secured}%"></i></div></td>
+      <td>${h.secured}%</td></tr>`);
+  });
+  body.innerHTML = rows.join('') || `<tr><td colspan="6" style="color:var(--faint)">No signals yet.</td></tr>`;
+  document.getElementById('histStat').textContent = history.length+' closed';
+}
+
+/* ---- Price / header ---- */
+let lastPx=null;
+function flashPrice(){ document.getElementById('livePrice').classList.add('flash');
+  setTimeout(()=>document.getElementById('livePrice').classList.remove('flash'),500); }
+function onPrice(px){
+  const el=document.getElementById('livePrice');
+  el.textContent=fmt(px);
+  if(lastPx!==null){ el.classList.toggle('up',px>lastPx); el.classList.toggle('down',px<lastPx); }
+  lastPx=px;
+  pushPriceToCandle(px);
+  const chg=px-PriceFeed.prevClose();
+  const cg=document.getElementById('liveChg');
+  cg.textContent=(chg>=0?'+':'')+fmt(chg)+' ('+(chg>=0?'+':'')+(chg/PriceFeed.prevClose()*100).toFixed(2)+'%)';
+  cg.className='chg '+(chg>=0?'up':'down');
+
+  if(pos && !pos.closed){
+    const events = PositionManager.onTick(pos,px);
+    PositionManager.checkReversal(pos,px);
+    if(events.length){
+      flashPrice();
+      if(pos.closed){ pushHistory(pos); }
+      renderSignal();
+    } else {
+      renderRail(); renderAddon();
+    }
+  }
+}
+PriceFeed.subscribe(onPrice);
+
+/* ---- New signal ---- */
+function newSignal(){
+  if(pos && !pos.closed){ pos.result = pos.securedPct>0?('Closed +'+pos.securedPct+'%'):'Cancelled'; pushHistory(pos); }
+  const sig = SignalEngine.generate(PriceFeed.get());
+  pos = PositionManager.create(sig);
+  pos.sig.lot = calcLots().lots;
+  // bias the sim feed gently toward the trade thesis so the demo progresses
+  PriceFeed.setBias(sig.dir*0.15);
+  renderSignal(); renderHistory();
+  document.getElementById('sigAge').textContent='just now';
+}
+document.getElementById('newSig').onclick=newSignal;
+
+/* ---- Demo buttons ---- */
+document.getElementById('forceTp1').onclick=()=>{ if(pos&&!pos.closed) PriceFeed.nudge(pos.sig.tp1,0.22); };
+document.getElementById('forceRev').onclick=()=>{
+  if(pos && pos.state===PositionManager.S.TP1){
+    const midback = pos.sig.dir>0 ? pos.sig.entry + (pos.sig.tp1-pos.sig.entry)*0.45
+                                  : pos.sig.entry - (pos.sig.entry-pos.sig.tp1)*0.45;
+    PriceFeed.nudge(midback,0.25);
+  }
+};
+
+/* ---- Clock ---- */
+setInterval(()=>{ document.getElementById('clock').textContent =
+  new Date().toLocaleTimeString('en-GB',{hour12:false,timeZone:'Africa/Johannesburg'})+' SAST'; },1000);
+setInterval(()=>{ if(pos){ const m=Math.round((Date.now()-pos.sig.created)/60000);
+  document.getElementById('sigAge').textContent = m<1?'just now':(m+'m ago'); }},15000);
+
+/* ---- TradingView live chart (direct iframe embed) ----
+   Uses an iframe to TradingView's widget host rather than their loader
+   script, so it isn't affected by the page's script-source policy. */
+function loadTV(interval){
+  const base = "https://s.tradingview.com/widgetembed/";
+  const q = "frameElementId=tvwidget&symbol=OANDA%3AXAUUSD&interval="+interval+
+            "&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=121a26"+
+            "&studies=%5B%22RSI%40tv-basicstudies%22%5D&theme=dark&style=1"+
+            "&timezone=Africa%2FJohannesburg&withdateranges=1&locale=en";
+  document.getElementById('tvwidget').innerHTML =
+    '<iframe src="'+base+'?'+q+'" title="TradingView XAUUSD" '+
+    'style="width:100%;height:460px;border:0;border-radius:0 0 14px 14px;display:block" '+
+    'allowtransparency="true" frameborder="0" scrolling="no"></iframe>';
+}
+document.getElementById('tvTfRow').addEventListener('click',(e)=>{
+  const b=e.target.closest('.tf'); if(!b) return;
+  document.querySelectorAll('#tvTfRow .tf').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); loadTV(b.dataset.int);
+});
+
+/* ============================================================
+   BOOT
+============================================================ */
+loadTV("60");
+PriceFeed.start(3922);
+initChart();
+newSignal();
+window.addEventListener('resize',()=>{ if(chart) chart.timeScale().fitContent(); });
+</script>
+</body>
+</html>
