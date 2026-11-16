@@ -203,7 +203,7 @@
     <div class="spacer"></div>
     <div class="feed">
       <span class="dot" id="feedDot"></span>
-      <span id="feedLabel">Sim feed · demo</span>
+      <span id="feedLabel">Connecting…</span>
       <span class="clock" id="clock"></span>
     </div>
   </header>
@@ -298,17 +298,18 @@
 
       <!-- Demo controls -->
       <div class="panel" style="margin-top:16px">
-        <div class="phead"><h2>Demo Controls</h2>
-          <span style="font-size:11px;color:var(--faint)">drive the state machine</span>
+        <div class="phead"><h2>Controls</h2>
+          <span style="font-size:11px;color:var(--faint)">scan real market structure</span>
         </div>
         <div class="calc">
-          <button class="btn primary" id="newSig">Generate new signal</button>
-          <button class="btn warn" id="forceTp1">Force price → TP1 (demo)</button>
-          <button class="btn" id="forceRev">Trigger reversal / add-on (demo)</button>
+          <button class="btn primary" id="newSig">Scan &amp; generate signal</button>
+          <button class="btn warn" id="forceTp1">Test: TP1 hit</button>
+          <button class="btn" id="forceRev">Test: reversal add-on</button>
           <p class="mini-note" style="margin:10px 2px 0">
-            The price feed is a simulated random-walk seeded near the sample zone so the
-            TP1 → breakeven → scale-in flow is visible without a broker connection.
-            Swap <code>PriceFeed</code> and <code>SignalEngine</code> for a live API or rules/AI engine — both are isolated modules.
+            Each scan reads the <b>Daily trend</b> (EMA20/50) and <b>H4 structure</b> (swing highs/lows,
+            RSI, ATR) from live PAXG/USD gold data, then builds a swing call at the real support/resistance
+            zone — the same market gives the same call, no randomness. Live price auto-manages TP1 → breakeven → scale-in;
+            the two Test buttons just preview those states.
           </p>
         </div>
       </div>
@@ -316,15 +317,15 @@
   </div>
 
   <div class="foot">
-    Educational / demo tool. Sample signals and a simulated price feed — not financial advice and not a live brokerage.
-    Position-management and signal generation are modular (<code>SignalEngine</code>, <code>PositionManager</code>, <code>PriceFeed</code>) for a real data source or AI engine.
+    Educational tool — not financial advice. Signals are rules-based swing reads on live PAXG/USD gold data (a spot-gold proxy), not guaranteed trades.
+    Engine is modular (<code>SignalEngine.scan</code>, <code>PositionManager</code>, <code>PriceFeed</code>) — swap the data source or rules for your own.
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.3/lightweight-charts.standalone.production.js"></script>
 <script>
 /* ============================================================
-   CONFIG
+   CONFIG + DATA LAYER
 ============================================================ */
 const CONFIG = {
   symbol: "OANDA:XAUUSD",
@@ -332,66 +333,114 @@ const CONFIG = {
   minLot: 0.01,
   lotStep: 0.01,
 };
+// Live gold data: PAXG/USD (Paxos Gold) tracks spot XAU closely, free + CORS + no key.
+const DATA = {
+  symbol: "PAXGUSDT",
+  bases: ["https://data-api.binance.vision", "https://api.binance.com"],
+};
+async function fetchJSON(path){
+  let err;
+  for(const b of DATA.bases){
+    try{ const r = await fetch(b+path, {cache:"no-store"}); if(r.ok) return await r.json(); err = new Error("HTTP "+r.status); }
+    catch(e){ err = e; }
+  }
+  throw err || new Error("fetch failed");
+}
+const TF = { M15:{bin:"15m",sec:900}, H1:{bin:"1h",sec:3600}, H4:{bin:"4h",sec:14400}, D1:{bin:"1d",sec:86400} };
+async function fetchKlines(bin, limit){
+  const j = await fetchJSON(`/api/v3/klines?symbol=${DATA.symbol}&interval=${bin}&limit=${limit}`);
+  return j.map(k=>({ time:Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4] }));
+}
+function r2(n){ return Math.round(n*100)/100; }
+
+/* ---- Indicators ---- */
+function ema(vals,p){ const k=2/(p+1); let e=vals[0]; for(let i=1;i<vals.length;i++) e=vals[i]*k+e*(1-k); return e; }
+function rsi(closes,p=14){
+  if(closes.length<=p) return 50;
+  let g=0,l=0;
+  for(let i=1;i<=p;i++){ const d=closes[i]-closes[i-1]; if(d>=0) g+=d; else l-=d; }
+  g/=p; l/=p;
+  for(let i=p+1;i<closes.length;i++){ const d=closes[i]-closes[i-1]; g=(g*(p-1)+(d>0?d:0))/p; l=(l*(p-1)+(d<0?-d:0))/p; }
+  const rs = l===0?100:g/l; return 100-100/(1+rs);
+}
+function atr(c,p=14){
+  if(c.length<=p) return Math.abs(c[c.length-1].high-c[c.length-1].low)||1;
+  const tr=[];
+  for(let i=1;i<c.length;i++){ const h=c[i].high,lo=c[i].low,pc=c[i-1].close; tr.push(Math.max(h-lo,Math.abs(h-pc),Math.abs(lo-pc))); }
+  let a=tr.slice(0,p).reduce((x,y)=>x+y,0)/p;
+  for(let i=p;i<tr.length;i++) a=(a*(p-1)+tr[i])/p;
+  return a;
+}
+function pivots(c,L=3,R=3){
+  const highs=[],lows=[];
+  for(let i=L;i<c.length-R;i++){
+    let ih=true,il=true;
+    for(let j=i-L;j<=i+R;j++){ if(c[j].high>c[i].high) ih=false; if(c[j].low<c[i].low) il=false; }
+    if(ih) highs.push(c[i].high); if(il) lows.push(c[i].low);
+  }
+  return {highs,lows};
+}
 
 /* ============================================================
-   SIGNAL ENGINE  (modular — replace generate() with AI/rules)
-   Produces a signal object the rest of the app consumes.
+   SIGNAL ENGINE  (rules-based swing scan on live data)
+   scan() reads Daily trend (highest level) + H4 structure and
+   returns a swing call. Deterministic: same market -> same call.
+   Swap the data source or rules here for your own engine.
 ============================================================ */
 const SignalEngine = (() => {
-  const reasons = {
-    Bearish: [
-      "Price rejected the {hi} supply zone on H1 with a bearish engulfing close; momentum rolling over into prior demand.",
-      "Lower-high printed under {hi} after a liquidity sweep; H4 structure stays bearish while below the zone.",
-      "Rejection from {hi} with RSI bearish divergence on H1 — selling the retrace back into premium."
-    ],
-    Bullish: [
-      "Bullish reaction off the {lo} demand block with a strong H1 close; structure flips to higher-highs.",
-      "Liquidity grabbed below {lo} then reclaimed — buying the pullback into the discount zone.",
-      "H4 trend up and price holding above {lo}; RSI bullish divergence supports continuation to supply."
-    ],
-    Neutral: [
-      "Price balancing between {lo} and {hi}; waiting for a clean break and retest before committing."
-    ]
-  };
 
-  function round(n){ return Math.round(n*100)/100; }
+  async function scan(){
+    // highest level first: Daily trend, then H4 structure for the entry
+    const [d1, h4] = await Promise.all([ fetchKlines("1d", 200), fetchKlines("4h", 300) ]);
+    const price = h4[h4.length-1].close;
+    const cD = d1.map(x=>x.close), cH = h4.map(x=>x.close);
+    const emaF = ema(cD, 20), emaS = ema(cD, 50);        // daily trend filter
+    const rsiH4 = rsi(cH, 14);
+    const a = atr(h4, 14);
+    const piv = pivots(h4, 3, 3);
+    const win = h4.slice(-60);
+    const recentHigh = Math.max(...win.map(x=>x.high));
+    const recentLow  = Math.min(...win.map(x=>x.low));
+    const resAbove = piv.highs.filter(p=>p>price+0.1*a).sort((x,y)=>x-y);   // nearest resistances
+    const supBelow = piv.lows.filter(p=>p<price-0.1*a).sort((x,y)=>y-x);    // nearest supports
 
-  // Build a realistic signal around a reference price.
-  function generate(ref){
-    const bias = Math.random() < 0.6 ? "Bearish" : (Math.random()<0.7 ? "Bullish" : "Neutral");
-    ref = ref || 3922;
+    // Direction: daily EMA trend; if flat, use position in the H4 range
+    let dir;
+    if(emaF > emaS*1.0008) dir = 1;
+    else if(emaF < emaS*0.9992) dir = -1;
+    else { const posR=(price-recentLow)/((recentHigh-recentLow)||1); dir = posR<0.45?1 : posR>0.55?-1 : (rsiH4<45?1:-1); }
+
     let s;
-    if(bias === "Bearish"){
-      const zHi = round(ref + 6 + Math.random()*6);
-      const zLo = round(zHi - (10 + Math.random()*8));
-      const entry = round((zHi+zLo)/2);
-      const sl  = round(zHi + 30 + Math.random()*20);
-      const tp1 = round(entry - 45 - Math.random()*10);
-      const tp2 = round(tp1 - 18 - Math.random()*8);
-      const tp3 = round(tp2 - 25 - Math.random()*10);
-      s = { bias, dir:-1, entryType:"Sell Limit", zoneLo:zLo, zoneHi:zHi, entry, sl, tp1, tp2, tp3 };
-    } else if(bias === "Bullish"){
-      const zLo = round(ref - 6 - Math.random()*6);
-      const zHi = round(zLo + (10 + Math.random()*8));
-      const entry = round((zHi+zLo)/2);
-      const sl  = round(zLo - 30 - Math.random()*20);
-      const tp1 = round(entry + 45 + Math.random()*10);
-      const tp2 = round(tp1 + 18 + Math.random()*8);
-      const tp3 = round(tp2 + 25 + Math.random()*10);
-      s = { bias, dir:1, entryType:"Buy Limit", zoneLo:zLo, zoneHi:zHi, entry, sl, tp1, tp2, tp3 };
+    if(dir > 0){
+      const support = supBelow[0] ?? recentLow;
+      const zoneLo = r2(support), zoneHi = r2(support + 0.4*a);
+      const entry = r2((zoneLo+zoneHi)/2);
+      const sl = r2(support - 1.0*a);
+      const tp1 = r2(Math.max(resAbove[0] ?? recentHigh, entry + 1.2*a));
+      const tp2 = r2(Math.max(resAbove[1] ?? recentHigh, tp1 + 1.0*a));
+      const tp3 = r2(entry + (entry - sl)*3);
+      const entryType = entry < price-0.1*a ? "Buy Limit" : entry > price+0.1*a ? "Buy Stop" : "Market";
+      s = { bias:"Bullish", dir:1, entryType, zoneLo, zoneHi, entry, sl, tp1, tp2, tp3 };
+      s.reason = `Daily trend up (EMA20 ${r2(emaF)} > EMA50 ${r2(emaS)}). H4 defending the ${zoneLo} demand zone, RSI ${rsiH4.toFixed(0)} — buying the pullback toward supply at ${tp1}.`;
     } else {
-      const zLo = round(ref - 8), zHi = round(ref + 8);
-      s = { bias, dir:0, entryType:"Market", zoneLo:zLo, zoneHi:zHi,
-            entry:round(ref), sl:round(ref-40), tp1:round(ref+35), tp2:round(ref+55), tp3:round(ref+80) };
+      const resist = resAbove[0] ?? recentHigh;
+      const zoneHi = r2(resist), zoneLo = r2(resist - 0.4*a);
+      const entry = r2((zoneLo+zoneHi)/2);
+      const sl = r2(resist + 1.0*a);
+      const tp1 = r2(Math.min(supBelow[0] ?? recentLow, entry - 1.2*a));
+      const tp2 = r2(Math.min(supBelow[1] ?? recentLow, tp1 - 1.0*a));
+      const tp3 = r2(entry - (sl - entry)*3);
+      const entryType = entry > price+0.1*a ? "Sell Limit" : entry < price-0.1*a ? "Sell Stop" : "Market";
+      s = { bias:"Bearish", dir:-1, entryType, zoneLo, zoneHi, entry, sl, tp1, tp2, tp3 };
+      s.reason = `Daily trend down (EMA20 ${r2(emaF)} < EMA50 ${r2(emaS)}). H4 capped at the ${zoneHi} supply zone, RSI ${rsiH4.toFixed(0)} — selling the retrace toward demand at ${tp1}.`;
     }
-    const tmpl = reasons[bias][Math.floor(Math.random()*reasons[bias].length)];
-    s.reason = tmpl.replace("{hi}", s.zoneHi).replace("{lo}", s.zoneLo);
-    s.id = "SIG-"+Math.random().toString(36).slice(2,7).toUpperCase();
+    s.id = "SIG-" + new Date().toISOString().slice(11,16).replace(":","");
     s.created = Date.now();
     s.lot = null;
+    s.scanPrice = price;
     return s;
   }
-  return { generate };
+  return { scan };
 })();
 
 /* ============================================================
@@ -474,38 +523,27 @@ const PositionManager = (() => {
 })();
 
 /* ============================================================
-   PRICE FEED (simulated — swap for websocket/REST)
+   PRICE FEED (live — polls PAXG/USD 24h ticker)
 ============================================================ */
 const PriceFeed = (() => {
-  let px = 3922, prevClose = 3922, subs=[], timer=null, bias=0;
-  function start(seed){
-    px = seed || 3922; prevClose = px;
-    if(timer) clearInterval(timer);
-    timer = setInterval(()=>{
-      const drift = bias*0.25;
-      px += (Math.random()-0.5)*1.6 + drift;
-      px = Math.round(px*100)/100;
+  let px = 0, prevClose = 0, subs=[], timer=null, ok=false;
+  async function poll(){
+    try{
+      const t = await fetchJSON(`/api/v3/ticker/24hr?symbol=${DATA.symbol}`);
+      px = +t.lastPrice; prevClose = +t.openPrice; ok = true;
+      setFeed(true);
       subs.forEach(f=>f(px));
-    }, 1200);
+    }catch(e){ ok = false; setFeed(false); }
   }
-  function nudge(target, speed){ // ease price toward a target over ticks (demo)
-    const iv = setInterval(()=>{
-      const diff = target - px;
-      if(Math.abs(diff) < 0.6){ clearInterval(iv); }
-      px += diff*(speed||0.18) + (Math.random()-0.5)*0.4;
-      px = Math.round(px*100)/100;
-      subs.forEach(f=>f(px));
-    }, 180);
-  }
-  return {
-    start,
-    get:()=>px,
-    setBias:(b)=>bias=b,
-    prevClose:()=>prevClose,
-    nudge,
-    subscribe:(f)=>subs.push(f)
-  };
+  function start(){ poll(); if(timer) clearInterval(timer); timer = setInterval(poll, 8000); }
+  return { start, poll, get:()=>px, prevClose:()=>prevClose, isOk:()=>ok, subscribe:(f)=>subs.push(f) };
 })();
+function setFeed(good){
+  const d=document.getElementById('feedDot'), l=document.getElementById('feedLabel');
+  if(!l) return;
+  if(good){ l.textContent="Live · PAXG/USD (gold proxy)"; l.style.color=""; d.style.background="var(--bull)"; }
+  else { l.textContent="Data feed unreachable"; l.style.color="var(--bear)"; d.style.background="var(--bear)"; }
+}
 
 /* ============================================================
    APP STATE + RENDER
@@ -520,29 +558,8 @@ function fmt(n){ return (Math.round(n*100)/100).toLocaleString('en-US',{minimumF
    policy. When you host this yourself (Next.js/React), drop the TradingView
    Advanced Chart widget into #tvchart instead and feed it CONFIG.symbol. Here
    we render candles from the (sim) feed and plot every level as a price line. */
-const TF = { M15:{sec:900,label:"M15"}, H1:{sec:3600,label:"H1"}, H4:{sec:14400,label:"H4"}, D1:{sec:86400,label:"1D"} };
 let curTF = "H1";
 let chart, candleSeries, priceLines = [], candles = [], curCandle = null;
-
-function seedCandles(tf, lastClose){
-  const n = 140, step = TF[tf].sec;
-  let t = Math.floor(Date.now()/1000); t = t - (t % step) - n*step;
-  let px = lastClose - (Math.random()*40-20);
-  const out=[];
-  for(let i=0;i<n;i++){
-    const o=px;
-    const vol = TF[tf].sec/3600; // bigger candles on higher TF
-    const c=o + (Math.random()-0.5)*2.2*Math.sqrt(vol+1);
-    const hi=Math.max(o,c)+Math.random()*1.4*Math.sqrt(vol+1);
-    const lo=Math.min(o,c)-Math.random()*1.4*Math.sqrt(vol+1);
-    out.push({time:t, open:r2(o), high:r2(hi), low:r2(lo), close:r2(c)});
-    px=c; t+=step;
-  }
-  // pull final close toward the live price
-  out[out.length-1].close = r2(lastClose);
-  return out;
-}
-function r2(n){return Math.round(n*100)/100;}
 
 function initChart(){
   const el=document.getElementById('tvchart'); el.innerHTML="";
@@ -560,12 +577,14 @@ function initChart(){
   });
   buildCandles();
 }
-function buildCandles(){
-  candles = seedCandles(curTF, PriceFeed.get());
-  candleSeries.setData(candles);
-  curCandle = {...candles[candles.length-1]};
-  chart.timeScale().fitContent();
-  drawLevelLines();
+async function buildCandles(){
+  try{
+    candles = await fetchKlines(TF[curTF].bin, 300);
+    candleSeries.setData(candles);
+    curCandle = {...candles[candles.length-1]};
+    chart.timeScale().fitContent();
+    drawLevelLines();
+  }catch(e){ /* feed banner handled by PriceFeed */ }
 }
 function drawLevelLines(){
   priceLines.forEach(l=>candleSeries.removePriceLine(l)); priceLines=[];
@@ -799,26 +818,34 @@ function onPrice(px){
 PriceFeed.subscribe(onPrice);
 
 /* ---- New signal ---- */
-function newSignal(){
+async function newSignal(){
+  const btn=document.getElementById('newSig');
   if(pos && !pos.closed){ pos.result = pos.securedPct>0?('Closed +'+pos.securedPct+'%'):'Cancelled'; pushHistory(pos); }
-  const sig = SignalEngine.generate(PriceFeed.get());
-  pos = PositionManager.create(sig);
-  pos.sig.lot = calcLots().lots;
-  // bias the sim feed gently toward the trade thesis so the demo progresses
-  PriceFeed.setBias(sig.dir*0.15);
-  renderSignal(); renderHistory();
-  document.getElementById('sigAge').textContent='just now';
+  btn.disabled=true; btn.textContent='Scanning market…';
+  document.getElementById('sigCard').innerHTML =
+    '<div style="padding:26px 8px;text-align:center;color:var(--muted);font-size:13px">⟳ Scanning Daily trend &amp; H4 structure…</div>';
+  try{
+    const sig = await SignalEngine.scan();
+    pos = PositionManager.create(sig);
+    pos.sig.lot = calcLots().lots;
+    renderSignal(); renderHistory();
+    document.getElementById('sigAge').textContent='scanned just now';
+  }catch(e){
+    document.getElementById('sigCard').innerHTML =
+      '<div style="padding:22px 8px;text-align:center;color:var(--bear);font-size:13px">Scan failed — gold data source unreachable on this network. No call generated (nothing is guessed).</div>';
+  }finally{ btn.disabled=false; btn.textContent='Scan & generate signal'; }
 }
 document.getElementById('newSig').onclick=newSignal;
 
-/* ---- Demo buttons ---- */
-document.getElementById('forceTp1').onclick=()=>{ if(pos&&!pos.closed) PriceFeed.nudge(pos.sig.tp1,0.22); };
+/* ---- Test buttons (advance the position state for demonstration) ---- */
+document.getElementById('forceTp1').onclick=()=>{
+  if(!pos||pos.closed||pos.state!==PositionManager.S.INITIAL) return;
+  pos.hits.tp1=true; pos.securedPct=40; pos.slWorking=pos.sig.entry;
+  pos.state=PositionManager.S.TP1; pos.result='TP1 hit'; flashPrice(); renderSignal();
+};
 document.getElementById('forceRev').onclick=()=>{
-  if(pos && pos.state===PositionManager.S.TP1){
-    const midback = pos.sig.dir>0 ? pos.sig.entry + (pos.sig.tp1-pos.sig.entry)*0.45
-                                  : pos.sig.entry - (pos.sig.entry-pos.sig.tp1)*0.45;
-    PriceFeed.nudge(midback,0.25);
-  }
+  if(!pos||pos.state!==PositionManager.S.TP1||pos.addSuggested) return;
+  pos.addSuggested=true; pos.addEntry=r2((pos.sig.entry+pos.sig.tp1)/2); renderSignal();
 };
 
 /* ---- Clock ---- */
@@ -851,8 +878,8 @@ document.getElementById('tvTfRow').addEventListener('click',(e)=>{
    BOOT
 ============================================================ */
 loadTV("60");
-PriceFeed.start(3922);
 initChart();
+PriceFeed.start();
 newSignal();
 window.addEventListener('resize',()=>{ if(chart) chart.timeScale().fitContent(); });
 </script>
