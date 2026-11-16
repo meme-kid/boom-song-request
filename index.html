@@ -526,12 +526,14 @@ const PositionManager = (() => {
    PRICE FEED (live — polls PAXG/USD 24h ticker)
 ============================================================ */
 const PriceFeed = (() => {
-  let px = 0, prevClose = 0, subs=[], timer=null, ok=false;
+  let px = 0, prevClose = 0, dayOpen = 0, subs=[], timer=null, ok=false;
   async function poll(){
     try{
-      const t = await fetchJSON(`/api/v3/ticker/24hr?symbol=${DATA.symbol}`);
-      px = +t.lastPrice; prevClose = +t.openPrice; ok = true;
-      setFeed(true);
+      const k = await fetchKlines("1m", 1);
+      px = k[k.length-1].close;
+      if(!dayOpen){ try{ const d = await fetchKlines("1d", 1); dayOpen = d[0].open; }catch(e){} }
+      prevClose = dayOpen || px;
+      ok = true; setFeed(true);
       subs.forEach(f=>f(px));
     }catch(e){ ok = false; setFeed(false); }
   }
@@ -639,7 +641,7 @@ function renderSignal(){
   const arrow = s.dir<0?"▼":s.dir>0?"▲":"◆";
   const sm = statusMeta(pos.state);
   const zone = (s.dir===0) ? fmt(s.entry) : (fmt(s.zoneLo)+"–"+fmt(s.zoneHi));
-  const lotTxt = s.lot ? s.lot.toFixed(2) : "—";
+  const lotTxt = s.lot ? (s.lot<0.01 ? s.lot.toFixed(3) : s.lot.toFixed(2)) : "—";
 
   const lv = (cls,k,v,hit)=>`<div class="lv ${cls} swatch-left ${hit?'hit':''}">
       <div class="tick">HIT</div><div class="k">${k}</div><div class="v">${v}</div></div>`;
@@ -678,6 +680,24 @@ function renderSignal(){
   renderRail();
   if(chart) drawLevelLines();
   updateCalc(); // keep lot output in sync with current SL distance
+  persist();
+}
+
+/* ---- Persistence (keep the call across page refreshes) ---- */
+function persist(){
+  try{
+    if(pos) localStorage.setItem('xau_pos', JSON.stringify(pos));
+    localStorage.setItem('xau_hist', JSON.stringify(history));
+  }catch(e){}
+}
+function restore(){
+  try{
+    const h = JSON.parse(localStorage.getItem('xau_hist')||'[]');
+    if(Array.isArray(h)) history = h;
+    const p = localStorage.getItem('xau_pos');
+    if(p){ pos = JSON.parse(p); return true; }
+  }catch(e){}
+  return false;
 }
 
 /* ---- Add-on / scale-in panel ---- */
@@ -731,21 +751,28 @@ function calcLots(){
   const riskPct=parseFloat(document.getElementById('risk').value)||0;
   const riskUsd = acct*(riskPct/100);
   const slDist = pos ? Math.abs(pos.sig.entry - pos.sig.sl) : 0;
-  let lots = slDist>0 ? riskUsd/(slDist*CONFIG.contractSize) : 0;
-  lots = Math.max(0, Math.floor(lots/CONFIG.lotStep)*CONFIG.lotStep);
-  return {acct,riskPct,riskUsd,slDist,lots};
+  const raw = slDist>0 ? riskUsd/(slDist*CONFIG.contractSize) : 0;        // exact size
+  const lots = Math.max(0, Math.floor(raw/CONFIG.lotStep)*CONFIG.lotStep); // broker-stepped
+  const suggest = (raw>0 && raw<CONFIG.minLot) ? +raw.toFixed(3) : lots;   // value to apply
+  return {acct,riskPct,riskUsd,slDist,raw,lots,suggest};
 }
 function updateCalc(){
   const c=calcLots();
   document.getElementById('outRiskUsd').textContent = "$"+c.riskUsd.toLocaleString('en-US',{maximumFractionDigits:2});
   document.getElementById('outSlDist').textContent = c.slDist?("$"+fmt(c.slDist)):"—";
-  document.getElementById('outLots').textContent = c.lots?c.lots.toFixed(2):"—";
-  document.getElementById('outLotNote').textContent =
-    `${CONFIG.contractSize} oz/lot · total risk ≈ $${(c.lots*c.slDist*CONFIG.contractSize).toFixed(2)}`;
+  const lotEl=document.getElementById('outLots'), noteEl=document.getElementById('outLotNote');
+  if(!c.slDist || !c.raw){ lotEl.textContent="—"; noteEl.textContent=`${CONFIG.contractSize} oz/lot · $1 move = $${CONFIG.contractSize}/lot`; return; }
+  if(c.raw < CONFIG.minLot){
+    lotEl.textContent = c.raw.toFixed(3);
+    noteEl.textContent = `Exact ${c.raw.toFixed(3)} — below ${CONFIG.minLot} broker min · at ${CONFIG.minLot} lot risk ≈ $${(CONFIG.minLot*c.slDist*CONFIG.contractSize).toFixed(2)}`;
+  } else {
+    lotEl.textContent = c.lots.toFixed(2);
+    noteEl.textContent = `${CONFIG.contractSize} oz/lot · total risk ≈ $${(c.lots*c.slDist*CONFIG.contractSize).toFixed(2)}`;
+  }
 }
 ['acct','risk'].forEach(id=>document.getElementById(id).addEventListener('input',updateCalc));
 document.getElementById('applyLot').onclick=()=>{
-  if(!pos) return; pos.sig.lot = calcLots().lots; renderSignal();
+  if(!pos) return; pos.sig.lot = calcLots().suggest; renderSignal();
 };
 
 /* ---- History ---- */
@@ -760,6 +787,7 @@ function pushHistory(p){
     result:p.result, resCls, secured:p.securedPct
   });
   renderHistory();
+  persist();
 }
 function renderHistory(){
   const body=document.getElementById('histBody');
@@ -827,7 +855,7 @@ async function newSignal(){
   try{
     const sig = await SignalEngine.scan();
     pos = PositionManager.create(sig);
-    pos.sig.lot = calcLots().lots;
+    pos.sig.lot = calcLots().suggest;
     renderSignal(); renderHistory();
     document.getElementById('sigAge').textContent='scanned just now';
   }catch(e){
@@ -880,7 +908,8 @@ document.getElementById('tvTfRow').addEventListener('click',(e)=>{
 loadTV("60");
 initChart();
 PriceFeed.start();
-newSignal();
+if(restore()){ renderSignal(); renderHistory(); }   // keep the last call after a refresh
+else { newSignal(); }                               // first visit -> scan now
 window.addEventListener('resize',()=>{ if(chart) chart.timeScale().fitContent(); });
 </script>
 </body>
